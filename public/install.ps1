@@ -16,8 +16,10 @@ New-Item -ItemType Directory -Path $travail | Out-Null
 try {
   $archive = Join-Path $travail "$dossier.zip"
   Invoke-WebRequest "$base/$dossier.zip" -OutFile $archive -UseBasicParsing
-  $empreintes = (Invoke-WebRequest "$base/SHA256SUMS" -UseBasicParsing).Content
-  $ligne = ($empreintes -split "`n") | Where-Object { $_ -match "\s\*?$([regex]::Escape("$dossier.zip"))\s*$" }
+  # GitHub sert ce fichier comme binaire : sa réponse directe serait des octets, jamais du texte.
+  $empreintes = Join-Path $travail 'SHA256SUMS'
+  Invoke-WebRequest "$base/SHA256SUMS" -OutFile $empreintes -UseBasicParsing
+  $ligne = Get-Content $empreintes | Where-Object { $_ -match "\s\*?$([regex]::Escape("$dossier.zip"))\s*$" }
   if (-not $ligne) { throw "No checksum for $dossier.zip" }
   $attendue = ($ligne -split '\s+')[0]
   if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $attendue.ToUpper()) { throw "Checksum mismatch: $dossier.zip" }
