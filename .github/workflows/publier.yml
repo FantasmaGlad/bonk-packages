@@ -43,7 +43,7 @@ jobs:
         if: steps.controle.outputs.a_faire == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev rpm createrepo-c gnupg
+          sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev rpm createrepo-c gnupg zstd
       # Les PR de dépôts externes n'ont pas le secret : la clé est alors une clé jetable, le tout reste contrôlé.
       - name: Clé de signature
         if: steps.controle.outputs.a_faire == 'true'
@@ -100,3 +100,25 @@ jobs:
         env:
           IMAGE: ${{ matrix.image }}
         run: docker run --rm --volume "$PWD/scripts:/s:ro" "$IMAGE" sh /s/essai-installation.sh
+
+  installer-windows:
+    name: installer (windows)
+    needs: publication
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - name: Script d'installation
+        shell: pwsh
+        run: |
+          irm https://packages.bonk-os.app/install.ps1 | iex
+          & "$env:LOCALAPPDATA\Programs\Bonk\bonk.exe" --version
+      - name: Scoop
+        shell: pwsh
+        run: |
+          iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
+          $env:PATH = "$HOME\scoop\shims;$env:PATH"
+          scoop install https://packages.bonk-os.app/scoop/bonk.json
+          bonk --version
+          scoop uninstall bonk
+          scoop install https://packages.bonk-os.app/scoop/bonk-cli.json
+          bonk --version
