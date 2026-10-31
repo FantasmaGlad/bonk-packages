@@ -5,22 +5,21 @@ set -eu
 
 DOSSIER="${BONK_INSTALL_DIR:-$HOME/.local/bin}"
 case "$(uname -s)-$(uname -m)" in
-  Linux-x86_64) cible=linux-x86_64-musl ;;
-  Linux-aarch64 | Linux-arm64) cible=linux-aarch64-musl ;;
-  Darwin-x86_64) cible=cli-macos-x86_64 ;;
-  Darwin-arm64) cible=cli-macos-aarch64 ;;
+  Linux-x86_64) cible=linux-x86_64 ;;
+  Linux-aarch64 | Linux-arm64) cible=linux-aarch64 ;;
+  Darwin-x86_64) cible=macos-x86_64 ;;
+  Darwin-arm64) cible=macos-aarch64 ;;
   *) echo "Unsupported system: $(uname -s) $(uname -m)" >&2; exit 1 ;;
 esac
 version=$(curl -fsSL https://packages.bonk-os.app/version.txt)
-case "$cible" in
-  cli-*) archive="bonk-cli-$version-${cible#cli-}.tar.gz" ;;
-  *) archive="bonk-$version-$cible.tar.gz" ;;
-esac
 base="https://github.com/FantasmaGlad/Bonk/releases/download/v$version"
 travail=$(mktemp -d)
 trap 'rm -rf "$travail"' EXIT
-curl -fsSL "$base/$archive" -o "$travail/$archive"
 curl -fsSL "$base/SHA256SUMS" -o "$travail/SHA256SUMS"
+# Jusqu'à la 0.0.3, l'archive Linux sans fenêtre s'appelait bonk-<version>-linux-<arch>-musl.
+archive="bonk-cli-$version-$cible.tar.gz"
+grep -q " $archive\$" "$travail/SHA256SUMS" || archive="bonk-$version-$cible-musl.tar.gz"
+curl -fsSL "$base/$archive" -o "$travail/$archive"
 (
   cd "$travail"
   grep " $archive\$" SHA256SUMS > attendu

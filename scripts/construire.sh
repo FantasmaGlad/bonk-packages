@@ -20,8 +20,10 @@ for tag in "${TAGS[@]}"; do
   dossier="$ENTREE/$tag"
   mkdir -p "$dossier"
   gh release download "$tag" --repo "$DEPOT" --dir "$dossier" \
-    --pattern '*.deb' --pattern '*.rpm' --pattern '*.pkg.tar.zst' --pattern SHA256SUMS
-  (cd "$dossier" && sha256sum --ignore-missing --check --quiet SHA256SUMS && rm SHA256SUMS)
+    --pattern '*.deb' --pattern '*.rpm' --pattern '*.pkg.tar.zst' --pattern SHA256SUMS \
+    --pattern '*-linux-*-musl.tar.gz' --pattern 'bonk-cli-*-linux-*.tar.gz'
+  (cd "$dossier" && sha256sum --ignore-missing --check --quiet SHA256SUMS && mv SHA256SUMS "$ENTREE/$tag.sums")
+  bash scripts/paquets-cli.sh "$dossier" "${tag#v}"
 done
 
 # APT
@@ -85,6 +87,9 @@ fi
 # Scoop lit un manifeste par adresse. Joint à la release juste après sa publication : absent un instant, sans gravité.
 mkdir -p "$SITE/scoop"
 gh release download "${TAGS[0]}" --repo "$DEPOT" --dir "$SITE/scoop" --pattern bonk.json || echo "manifeste Scoop pas encore joint"
+
+# La version sans fenêtre ne porte pas de manifeste sur la release : il se déduit des empreintes.
+python3 scripts/scoop-cli.py "$ENTREE/${TAGS[0]}.sums" "${TAGS[0]#v}" > "$SITE/scoop/bonk-cli.json"
 
 touch "$SITE/.nojekyll"
 echo packages.bonk-os.app > "$SITE/CNAME"

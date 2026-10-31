@@ -10,13 +10,22 @@ if command -v apt-get > /dev/null; then
   echo "deb [signed-by=/etc/apt/keyrings/bonk.gpg] $U/debian stable main" > /etc/apt/sources.list.d/bonk.list
   apt-get update -q
   apt-get install -yq --no-install-recommends bonk
+  bonk --version
+  apt-get remove -yq bonk
+  apt-get install -yq --no-install-recommends bonk-cli
 elif command -v zypper > /dev/null; then
   zypper --non-interactive --gpg-auto-import-keys addrepo "$U/rpm/x86_64" bonk
   rpm --import "$U/bonk.asc"
   zypper --non-interactive --gpg-auto-import-keys install --no-recommends bonk
+  bonk --version
+  zypper --non-interactive remove bonk
+  zypper --non-interactive --gpg-auto-import-keys install --no-recommends bonk-cli
 elif command -v dnf > /dev/null; then
   curl -fsSL "$U/rpm/bonk.repo" -o /etc/yum.repos.d/bonk.repo
   dnf install -y --setopt=install_weak_deps=False bonk
+  bonk --version
+  dnf remove -y bonk
+  dnf install -y --setopt=install_weak_deps=False bonk-cli
 elif command -v pacman > /dev/null; then
   pacman-key --init
   curl -fsSL "$U/bonk.asc" -o /tmp/bonk.asc
@@ -24,6 +33,9 @@ elif command -v pacman > /dev/null; then
   pacman-key --lsign-key 8DE680FFBE475B663E8B019A757866E34D67014B
   printf '\n[bonk]\nSigLevel = Required\nServer = %s/arch/$arch\n' "$U" >> /etc/pacman.conf
   pacman -Sy --noconfirm bonk
+  bonk --version
+  pacman -R --noconfirm bonk
+  pacman -S --noconfirm bonk-cli
 else
   apk add --no-cache curl
   curl -fsSL "$U/install.sh" | sh
