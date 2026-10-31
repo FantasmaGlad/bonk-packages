@@ -1,0 +1,102 @@
+# Reconstruit les dépôts depuis les releases de Bonk, les publie sur GitHub Pages, puis installe Bonk pour de
+# vrai depuis l'adresse publique. Toutes les heures : ne fait rien si la dernière version est déjà publiée.
+name: publier
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publier
+  cancel-in-progress: false
+
+jobs:
+  construire:
+    name: construire
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      a_faire: ${{ steps.controle.outputs.a_faire }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Faut-il publier ?
+        id: controle
+        env:
+          EVENEMENT: ${{ github.event_name }}
+        run: |
+          derniere=$(gh release view --repo FantasmaGlad/Bonk --json tagName --jq '.tagName | ltrimstr("v")')
+          publiee=$(curl -fsSL https://packages.bonk-os.app/version.txt || true)
+          if [ "$EVENEMENT" != schedule ] || [ "$derniere" != "$publiee" ]; then a_faire=true; else a_faire=false; fi
+          echo "a_faire=$a_faire" >> "$GITHUB_OUTPUT"
+      - name: Outils
+        if: steps.controle.outputs.a_faire == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev rpm createrepo-c gnupg
+      # Les PR de dépôts externes n'ont pas le secret : la clé est alors une clé jetable, le tout reste contrôlé.
+      - name: Clé de signature
+        if: steps.controle.outputs.a_faire == 'true'
+        env:
+          CLE: ${{ github.event_name != 'pull_request' && secrets.GPG_PRIVATE_KEY || '' }}
+          EMPREINTE: ${{ vars.GPG_KEY_ID }}
+        run: |
+          if [ -z "$CLE" ]; then
+            gpg --batch --passphrase '' --quick-generate-key "Essai <essai@invalid>" rsa2048 sign 1d
+            EMPREINTE=$(gpg --list-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')
+          else
+            printf '%s' "$CLE" | gpg --batch --import
+          fi
+          echo "GPG_KEY_ID=$EMPREINTE" >> "$GITHUB_ENV"
+      - name: Construire les dépôts
+        if: steps.controle.outputs.a_faire == 'true'
+        run: bash scripts/construire.sh
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: steps.controle.outputs.a_faire == 'true'
+        with:
+          path: site
+          include-hidden-files: true
+
+  publication:
+    name: publication
+    if: github.event_name != 'pull_request' && needs.construire.outputs.a_faire == 'true'
+    needs: construire
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  installer:
+    name: installer (${{ matrix.image }})
+    needs: publication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["debian:13", "ubuntu:24.04", "fedora:latest", "opensuse/tumbleweed:latest", "archlinux:latest", "alpine:3"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Installer depuis l'adresse publique
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: docker run --rm --volume "$PWD/scripts:/s:ro" "$IMAGE" sh /s/essai-installation.sh
