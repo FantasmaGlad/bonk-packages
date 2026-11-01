@@ -10,6 +10,7 @@ ENTREE=$PWD/entree
 rm -rf "$SITE" "$ENTREE"
 mkdir -p "$ENTREE" "$SITE"
 cp -r public/. "$SITE/"
+cp -r web/dist/. "$SITE/"
 
 mapfile -t TAGS < <(gh release list --repo "$DEPOT" --limit 10 --exclude-drafts --exclude-pre-releases \
   --json tagName --jq '.[].tagName' | head -n 2)
