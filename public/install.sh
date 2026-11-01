@@ -16,9 +16,7 @@ base="https://github.com/FantasmaGlad/Bonk/releases/download/v$version"
 travail=$(mktemp -d)
 trap 'rm -rf "$travail"' EXIT
 curl -fsSL "$base/SHA256SUMS" -o "$travail/SHA256SUMS"
-# Jusqu'à la 0.0.3, l'archive Linux sans fenêtre s'appelait bonk-<version>-linux-<arch>-musl.
 archive="bonk-cli-$version-$cible.tar.gz"
-grep -q " $archive\$" "$travail/SHA256SUMS" || archive="bonk-$version-$cible-musl.tar.gz"
 curl -fsSL "$base/$archive" -o "$travail/$archive"
 (
   cd "$travail"
