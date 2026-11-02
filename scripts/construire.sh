@@ -58,11 +58,14 @@ for arch in x86_64 aarch64; do
   gpg --batch --yes --local-user "$GPG_KEY_ID" --armor --detach-sign \
     -o "$SITE/rpm/$arch/repodata/repomd.xml.asc" "$SITE/rpm/$arch/repodata/repomd.xml"
 done
+# Priorité au-dessus des dépôts du système (99 par défaut, le plus petit l'emporte) : openSUSE a son propre
+# paquet « bonk » (un autre outil, en 0.4.0), que zypper choisirait sinon pour sa version plus haute.
 cat > "$SITE/rpm/bonk.repo" <<'REPO'
 [bonk]
 name=Bonk
 baseurl=https://packages.bonk-os.app/rpm/$basearch
 enabled=1
+priority=90
 gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://packages.bonk-os.app/bonk.asc
