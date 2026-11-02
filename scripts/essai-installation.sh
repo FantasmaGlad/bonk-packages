@@ -14,12 +14,14 @@ if command -v apt-get > /dev/null; then
   apt-get remove -yq bonk
   apt-get install -yq --no-install-recommends bonk-cli
 elif command -v zypper > /dev/null; then
-  zypper --non-interactive --gpg-auto-import-keys addrepo "$U/rpm/x86_64" bonk
+  # Les commandes de la page d'installation : le fichier .repo choisit le dépôt du processeur ($basearch).
   rpm --import "$U/bonk.asc"
-  zypper --non-interactive --gpg-auto-import-keys install --no-recommends bonk
+  zypper --non-interactive addrepo "$U/rpm/bonk.repo"
+  zypper --non-interactive refresh
+  zypper --non-interactive install --no-recommends bonk
   bonk --version
   zypper --non-interactive remove bonk
-  zypper --non-interactive --gpg-auto-import-keys install --no-recommends bonk-cli
+  zypper --non-interactive install --no-recommends bonk-cli
 elif command -v dnf > /dev/null; then
   curl -fsSL "$U/rpm/bonk.repo" -o /etc/yum.repos.d/bonk.repo
   dnf install -y --setopt=install_weak_deps=False bonk
