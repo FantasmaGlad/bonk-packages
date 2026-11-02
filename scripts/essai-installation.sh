@@ -1,7 +1,12 @@
 #!/bin/sh
 # Installe Bonk depuis packages.bonk-os.app avec le gestionnaire du système, comme le ferait un utilisateur.
+# BONK_DEPOT et BONK_EMPREINTE désignent un arbre servi localement et sa clé, pour l'essayer avant de le publier.
 set -eu
-U=https://packages.bonk-os.app
+PUBLIC=https://packages.bonk-os.app
+U=${BONK_DEPOT:-$PUBLIC}
+EMPREINTE=${BONK_EMPREINTE:-8DE680FFBE475B663E8B019A757866E34D67014B}
+# Le fichier .repo nomme l'adresse publique : le pointer sur l'arbre essayé.
+repo_local() { sed "s#$PUBLIC#$U#g" "$1"; }
 if command -v apt-get > /dev/null; then
   apt-get update -q
   apt-get install -yq curl ca-certificates
@@ -16,14 +21,21 @@ if command -v apt-get > /dev/null; then
 elif command -v zypper > /dev/null; then
   # Les commandes de la page d'installation : le fichier .repo choisit le dépôt du processeur ($basearch).
   rpm --import "$U/bonk.asc"
-  zypper --non-interactive addrepo "$U/rpm/bonk.repo"
+  if [ "$U" = "$PUBLIC" ]; then
+    zypper --non-interactive addrepo "$U/rpm/bonk.repo"
+  else
+    command -v curl > /dev/null || zypper --non-interactive install --no-recommends curl
+    curl -fsSL "$U/rpm/bonk.repo" -o /tmp/bonk.repo && repo_local /tmp/bonk.repo > /tmp/bonk-local.repo
+    zypper --non-interactive addrepo /tmp/bonk-local.repo
+  fi
   zypper --non-interactive refresh
   zypper --non-interactive install --no-recommends bonk
   bonk --version
   zypper --non-interactive remove bonk
   zypper --non-interactive install --no-recommends bonk-cli
 elif command -v dnf > /dev/null; then
-  curl -fsSL "$U/rpm/bonk.repo" -o /etc/yum.repos.d/bonk.repo
+  curl -fsSL "$U/rpm/bonk.repo" -o /tmp/bonk.repo
+  repo_local /tmp/bonk.repo > /etc/yum.repos.d/bonk.repo
   dnf install -y --setopt=install_weak_deps=False bonk
   bonk --version
   dnf remove -y bonk
@@ -32,7 +44,7 @@ elif command -v pacman > /dev/null; then
   pacman-key --init
   curl -fsSL "$U/bonk.asc" -o /tmp/bonk.asc
   pacman-key --add /tmp/bonk.asc
-  pacman-key --lsign-key 8DE680FFBE475B663E8B019A757866E34D67014B
+  pacman-key --lsign-key "$EMPREINTE"
   printf '\n[bonk]\nSigLevel = Required\nServer = %s/arch/$arch\n' "$U" >> /etc/pacman.conf
   pacman -Sy --noconfirm bonk
   bonk --version

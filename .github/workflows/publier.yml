@@ -1,5 +1,6 @@
-# Reconstruit les dépôts depuis les releases de Bonk, les publie sur GitHub Pages, puis installe Bonk pour de
-# vrai depuis l'adresse publique. Toutes les heures : ne fait rien si la dernière version est déjà publiée.
+# Reconstruit les dépôts depuis les releases de Bonk, installe Bonk depuis l'arbre construit, le publie sur GitHub
+# Pages, puis installe Bonk pour de vrai depuis l'adresse publique. Toutes les heures : ne fait rien si la dernière
+# version est déjà publiée.
 name: publier
 
 on:
@@ -21,7 +22,7 @@ jobs:
   construire:
     name: construire
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     outputs:
       a_faire: ${{ steps.controle.outputs.a_faire }}
     env:
@@ -75,6 +76,25 @@ jobs:
       - name: Construire les dépôts
         if: steps.controle.outputs.a_faire == 'true'
         run: bash scripts/construire.sh
+      # Avant toute publication : installer depuis l'arbre construit, servi sur la machine, avec la clé qui l'a
+      # signé (la vraie, ou la clé jetable d'une PR). Un dépôt cassé n'atteint ainsi jamais l'adresse publique.
+      - name: Installer avant de publier
+        if: steps.controle.outputs.a_faire == 'true'
+        run: |
+          essai=$(mktemp -d)
+          cp -r site/. "$essai"
+          gpg --export "$GPG_KEY_ID" > "$essai/bonk.gpg"
+          gpg --armor --export "$GPG_KEY_ID" > "$essai/bonk.asc"
+          python3 -m http.server --bind 127.0.0.1 --directory "$essai" 8080 > /dev/null 2>&1 &
+          serveur=$!
+          trap 'kill "$serveur"' EXIT
+          for image in debian:13 ubuntu:24.04 fedora:latest opensuse/tumbleweed:latest archlinux:latest; do
+            echo "::group::$image"
+            docker run --rm --network host --volume "$PWD/scripts:/s:ro" \
+              --env BONK_DEPOT=http://127.0.0.1:8080 --env BONK_EMPREINTE="$GPG_KEY_ID" \
+              "$image" sh /s/essai-installation.sh
+            echo "::endgroup::"
+          done
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         if: steps.controle.outputs.a_faire == 'true'
         with:
