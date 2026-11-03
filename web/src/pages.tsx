@@ -5,6 +5,7 @@ const SOURCES = [
   ["APT", "/debian", "Debian, Ubuntu, Mint"],
   ["DNF, Zypper", "/rpm", "Fedora, RHEL, openSUSE"],
   ["pacman", "/arch", "Arch, Manjaro"],
+  ["Homebrew", "fantasmaglad/bonk", "macOS, Linux"],
   ["Scoop", "/scoop", "Windows"],
   ["Script", "/install.sh", "Linux, macOS"],
   ["Script", "/install.ps1", "Windows"],
@@ -59,7 +60,14 @@ function Home() {
                   <tr key={path}>
                     <td>{manager}</td>
                     <td>
-                      <code>{path}</code>
+                      {path.startsWith("/") ? (
+                        <code>{path}</code>
+                      ) : (
+                        // The Homebrew tap is a GitHub repository of its own, not a folder here.
+                        <a href={`https://github.com/${path.replace("/", "/homebrew-")}`}>
+                          <code>{path}</code>
+                        </a>
+                      )}
                     </td>
                     <td>{target}</td>
                   </tr>

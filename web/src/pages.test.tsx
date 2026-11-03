@@ -15,3 +15,8 @@ it("partage la charte du site principal, sans style écrit dans la page", () => 
   expect(html).not.toContain("<style");
   expect(html).toContain('href="https://bonk-os.app/images/"');
 });
+
+it("liste aussi le tap Homebrew, qui vit dans son propre dépôt", () => {
+  const html = renderToStaticMarkup(PAGES[0]?.page);
+  expect(html).toContain('href="https://github.com/fantasmaglad/homebrew-bonk"');
+});
