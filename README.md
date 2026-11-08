@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/FantasmaGlad/Bonk/main/docs/icons/linux.svg" width="96" height="96" alt="Linux">
+  <img src="docs/icons/linux.svg" width="96" height="96" alt="Linux">
 </p>
 
 <h1 align="center">bonk-packages</h1>
@@ -27,7 +27,7 @@
 - Fingerprint: `8DE6 80FF BE47 5B66 3E8B 019A 7578 66E3 4D67 014B`
 - `bonk-cli`, the version without a window: replace `bonk` in the commands below.
 
-## <img src="https://raw.githubusercontent.com/FantasmaGlad/Bonk/main/docs/icons/debian.svg" width="20" height="20" valign="middle" alt="Debian"> Debian, Ubuntu (APT)
+## <img src="docs/icons/debian.svg" width="20" height="20" valign="middle" alt="Debian"> Debian, Ubuntu (APT)
 
 ```bash
 url=https://packages.bonk-os.app
@@ -39,7 +39,7 @@ echo "deb [signed-by=/etc/apt/keyrings/bonk.gpg] $url/debian stable main" \
 sudo apt update && sudo apt install bonk
 ```
 
-## <img src="https://raw.githubusercontent.com/FantasmaGlad/Bonk/main/docs/icons/fedora.svg" width="20" height="20" valign="middle" alt="Fedora"> Fedora, RHEL (DNF)
+## <img src="docs/icons/fedora.svg" width="20" height="20" valign="middle" alt="Fedora"> Fedora, RHEL (DNF)
 
 ```bash
 sudo curl -fsSL https://packages.bonk-os.app/rpm/bonk.repo \
@@ -47,7 +47,7 @@ sudo curl -fsSL https://packages.bonk-os.app/rpm/bonk.repo \
 sudo dnf install bonk
 ```
 
-## <img src="https://raw.githubusercontent.com/FantasmaGlad/Bonk/main/docs/icons/opensuse.svg" width="20" height="20" valign="middle" alt="openSUSE"> openSUSE (Zypper)
+## <img src="docs/icons/opensuse.svg" width="20" height="20" valign="middle" alt="openSUSE"> openSUSE (Zypper)
 
 ```bash
 url=https://packages.bonk-os.app
@@ -56,7 +56,7 @@ sudo zypper addrepo "$url/rpm/bonk.repo"
 sudo zypper refresh && sudo zypper install bonk
 ```
 
-## <img src="https://raw.githubusercontent.com/FantasmaGlad/Bonk/main/docs/icons/arch.svg" width="20" height="20" valign="middle" alt="Arch Linux"> Arch Linux (pacman)
+## <img src="docs/icons/arch.svg" width="20" height="20" valign="middle" alt="Arch Linux"> Arch Linux (pacman)
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/bonk.asc | sudo pacman-key --add -
@@ -71,7 +71,7 @@ SigLevel = Required
 Server = https://packages.bonk-os.app/arch/$arch
 ```
 
-## <img src="https://raw.githubusercontent.com/FantasmaGlad/Bonk/main/docs/icons/windows.svg" width="20" height="20" valign="middle" alt="Windows"> Windows (Scoop)
+## <img src="docs/icons/windows.svg" width="20" height="20" valign="middle" alt="Windows"> Windows (Scoop)
 
 ```powershell
 scoop install https://packages.bonk-os.app/scoop/bonk.json
