@@ -11,7 +11,8 @@
 <p align="center">
   <a href="https://packages.bonk-os.app"><b>packages.bonk-os.app</b></a> &nbsp;·&nbsp;
   <a href="https://packages.bonk-os.app/bonk.asc"><b>Signing key</b></a> &nbsp;·&nbsp;
-  <a href="https://bonk-os.app/install/"><b>Install</b></a>
+  <a href="https://bonk-os.app/install/"><b>Install</b></a> &nbsp;·&nbsp;
+  <a href="https://packages.bonk-os.app/fr/"><b>Français</b></a>
 </p>
 
 <p align="center">
@@ -88,14 +89,8 @@ curl -fsSL https://packages.bonk-os.app/install.sh | sh
 irm https://packages.bonk-os.app/install.ps1 | iex
 ```
 
-## This repository
-
-- `web/` builds the portal page: `pnpm build`.
-- `scripts/construire.sh` builds the signed repositories from the Bonk releases.
-- `.github/workflows/publier.yml` installs Bonk from the built tree on Debian, Ubuntu, Fedora, openSUSE, Arch and Windows, then publishes.
-
 ---
 
-License: MIT ([LICENSE](LICENSE)) · Security: [security.bonk-os.app](https://security.bonk-os.app)
+License: view-only, all rights reserved ([LICENSE](LICENSE)) · Security: [SECURITY.md](SECURITY.md) · Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-<sub>Related repositories: [Bonk](https://github.com/FantasmaGlad/Bonk) (application) · [BonkWeb](https://github.com/FantasmaGlad/BonkWeb) (website) · [bonk-catalog](https://github.com/FantasmaGlad/bonk-catalog) (image catalog) · [homebrew-bonk](https://github.com/FantasmaGlad/homebrew-bonk) (Homebrew tap) · [bonk-security](https://github.com/FantasmaGlad/bonk-security) (security site)</sub>
+<sub>Related repositories: [Bonk](https://github.com/FantasmaGlad/Bonk) (application) · [BonkWeb](https://github.com/FantasmaGlad/BonkWeb) (website) · [bonk-catalog](https://github.com/FantasmaGlad/bonk-catalog) (image catalog) · [homebrew-bonk](https://github.com/FantasmaGlad/homebrew-bonk) (Homebrew tap) · [bonk-security](https://github.com/FantasmaGlad/bonk-security) (security site) · Security policy: [security.bonk-os.app](https://security.bonk-os.app), [`/.well-known/security.txt`](https://bonk-os.app/.well-known/security.txt)</sub>
