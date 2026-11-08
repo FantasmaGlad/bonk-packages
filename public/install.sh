@@ -1,6 +1,4 @@
 #!/bin/sh
-# Installe la version de Bonk sans fenêtre pour cet utilisateur, sans droits d'administrateur.
-# Usage : curl -fsSL https://packages.bonk-os.app/install.sh | sh
 set -eu
 
 DOSSIER="${BONK_INSTALL_DIR:-$HOME/.local/bin}"

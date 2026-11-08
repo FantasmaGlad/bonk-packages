@@ -1,6 +1,3 @@
-# Reconstruit les dépôts depuis les releases de Bonk, installe Bonk depuis l'arbre construit, le publie sur GitHub
-# Pages, puis installe Bonk pour de vrai depuis l'adresse publique. Toutes les heures : ne fait rien si la dernière
-# version est déjà publiée.
 name: publier
 
 on:
@@ -76,8 +73,7 @@ jobs:
       - name: Construire les dépôts
         if: steps.controle.outputs.a_faire == 'true'
         run: bash scripts/construire.sh
-      # Avant toute publication : installer depuis l'arbre construit, servi sur la machine, avec la clé qui l'a
-      # signé (la vraie, ou la clé jetable d'une PR). Un dépôt cassé n'atteint ainsi jamais l'adresse publique.
+      # Installer depuis l'arbre construit avant de publier : un dépôt cassé n'atteint jamais l'adresse publique.
       - name: Installer avant de publier
         if: steps.controle.outputs.a_faire == 'true'
         run: |
