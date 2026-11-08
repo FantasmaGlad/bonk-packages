@@ -2,21 +2,28 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { PAGES } from "./pages";
 
-it("dit où installer et donne l'empreinte, sans script", () => {
-  const html = renderToStaticMarkup(PAGES[0]?.page);
-  expect(html).toContain("https://bonk-os.app/install/");
-  expect(html).toContain("8DE680FFBE475B663E8B019A757866E34D67014B");
-  expect(html).not.toContain("<script");
+const html = PAGES.map(({ page }) => renderToStaticMarkup(page));
+
+it("donne les deux langues, l'empreinte et les commandes de chaque gestionnaire", () => {
+  expect(PAGES.map(({ path }) => path)).toEqual(["index.html", "fr/index.html"]);
+  for (const page of html) {
+    expect(page).toContain("8DE6 80FF BE47 5B66 3E8B 019A 7578 66E3 4D67 014B");
+    expect(page).toContain("sudo apt install bonk");
+    expect(page).toContain("sudo dnf install bonk");
+    expect(page).toContain("sudo zypper install bonk");
+    expect(page).toContain("sudo pacman -Sy bonk");
+    expect(page).toContain("brew install fantasmaglad/bonk/bonk");
+    expect(page).toContain("/scoop/bonk.json");
+    expect(page).toContain("/install.sh | sh");
+    expect(page).toContain("/install.ps1 | iex");
+  }
+  expect(html[1]).toContain('lang="fr"');
 });
 
-it("partage la charte du site principal, sans style écrit dans la page", () => {
-  const html = renderToStaticMarkup(PAGES[0]?.page);
-  expect(html).toContain('href="/style.css"');
-  expect(html).not.toContain("<style");
-  expect(html).toContain('href="https://bonk-os.app/images/"');
-});
-
-it("liste aussi le tap Homebrew, qui vit dans son propre dépôt", () => {
-  const html = renderToStaticMarkup(PAGES[0]?.page);
-  expect(html).toContain('href="https://github.com/fantasmaglad/homebrew-bonk"');
+it("garde le style hors de la page et ne charge que le bouton copier", () => {
+  for (const page of html) {
+    expect(page).toContain('href="/site.css"');
+    expect(page).not.toContain("<style");
+    expect(page.match(/<script[^>]*>/g)).toEqual(['<script src="/copy.js" defer="">']);
+  }
 });
