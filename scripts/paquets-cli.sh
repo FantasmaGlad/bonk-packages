@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Emballe la version sans fenêtre d'une release en paquet bonk-cli : .deb, .rpm et pacman.
-# Le binaire est statique, donc sans dépendance ; il remplace le paquet bonk, qui installe le même nom de commande.
-# Usage : paquets-cli.sh <dossier de la release> <version>
 set -euo pipefail
 
 DOSSIER=$(realpath "$1")
@@ -66,7 +63,7 @@ SPEC
   find "$travail/rpm/RPMS" -name '*.rpm' -exec mv -t "$DOSSIER" {} +
 done
 
-# pacman : x86_64 seul, comme le dépôt. Un paquet pacman est une archive avec son .PKGINFO en tête.
+# pacman attend .PKGINFO en tête de l'archive.
 racine="$travail/pacman"
 mkdir -p "$racine"
 install -Dm755 "$travail/x86_64/bonk" "$racine/usr/bin/bonk"

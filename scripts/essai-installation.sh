@@ -1,6 +1,4 @@
 #!/bin/sh
-# Installe Bonk depuis packages.bonk-os.app avec le gestionnaire du système, comme le ferait un utilisateur.
-# BONK_DEPOT et BONK_EMPREINTE désignent un arbre servi localement et sa clé, pour l'essayer avant de le publier.
 set -eu
 PUBLIC=https://packages.bonk-os.app
 U=${BONK_DEPOT:-$PUBLIC}

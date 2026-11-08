@@ -1,4 +1,3 @@
-// Bouton copier à côté de chaque bloc de commandes ; la page reste complète sans script.
 (() => {
   const fr = document.documentElement.lang === "fr";
   const labels = fr ? ["Copier", "Copié"] : ["Copy", "Copied"];
