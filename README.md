@@ -12,6 +12,7 @@
   <a href="https://packages.bonk-os.app"><b>packages.bonk-os.app</b></a> &nbsp;·&nbsp;
   <a href="https://packages.bonk-os.app/bonk.asc"><b>Signing key</b></a> &nbsp;·&nbsp;
   <a href="https://bonk-os.app/install/"><b>Install</b></a> &nbsp;·&nbsp;
+  <a href="https://bonk-os.app/reference/"><b>Commands</b></a> &nbsp;·&nbsp;
   <a href="https://packages.bonk-os.app/fr/"><b>Français</b></a>
 </p>
 
