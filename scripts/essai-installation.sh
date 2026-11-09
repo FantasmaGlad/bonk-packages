@@ -3,9 +3,9 @@ set -eu
 PUBLIC=https://packages.bonk-os.app
 U=${BONK_DEPOT:-$PUBLIC}
 EMPREINTE=${BONK_EMPREINTE:-8DE680FFBE475B663E8B019A757866E34D67014B}
-# Le fichier .repo nomme l'adresse publique : le pointer sur l'arbre essayé.
+# The .repo file names the public address: point it at the tested tree.
 repo_local() { sed "s#$PUBLIC#$U#g" "$1"; }
-# Le binaire installé doit être Bonk, à la version publiée : un autre paquet du même nom peut l'emporter.
+# The installed binary must be Bonk at the published version: another package of the same name may win.
 verifier() {
   attendu="bonk $(curl -fsSL "$U/version.txt")"
   obtenu=$(bonk --version)
@@ -25,7 +25,7 @@ if command -v apt-get > /dev/null; then
   apt-get install -yq --no-install-recommends bonk-cli
 elif command -v zypper > /dev/null; then
   command -v curl > /dev/null || zypper --non-interactive install --no-recommends curl
-  # Les commandes de la page d'installation : le fichier .repo choisit le dépôt du processeur ($basearch).
+  # The install page commands: the .repo file picks the processor's repository ($basearch).
   rpm --import "$U/bonk.asc"
   if [ "$U" = "$PUBLIC" ]; then
     zypper --non-interactive addrepo "$U/rpm/bonk.repo"

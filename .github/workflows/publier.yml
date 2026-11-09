@@ -42,7 +42,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends apt-utils dpkg-dev rpm createrepo-c gnupg zstd
-      # Les PR de dépôts externes n'ont pas le secret : la clé est alors une clé jetable, le tout reste contrôlé.
+      # Fork PRs lack the secret: a throwaway key is used and everything is still checked.
       - name: Clé de signature
         if: steps.controle.outputs.a_faire == 'true'
         env:
@@ -73,7 +73,7 @@ jobs:
       - name: Construire les dépôts
         if: steps.controle.outputs.a_faire == 'true'
         run: bash scripts/construire.sh
-      # Installer depuis l'arbre construit avant de publier : un dépôt cassé n'atteint jamais l'adresse publique.
+      # Install from the built tree before publishing: a broken repository never reaches the public address.
       - name: Installer avant de publier
         if: steps.controle.outputs.a_faire == 'true'
         run: |

@@ -53,7 +53,7 @@ for arch in x86_64 aarch64; do
   gpg --batch --yes --local-user "$GPG_KEY_ID" --armor --detach-sign \
     -o "$SITE/rpm/$arch/repodata/repomd.xml.asc" "$SITE/rpm/$arch/repodata/repomd.xml"
 done
-# Priorité 90 : sinon zypper choisit le paquet « bonk » d'openSUSE, un autre outil de version plus haute.
+# Priority 90: otherwise zypper picks openSUSE's "bonk", another tool with a higher version.
 cat > "$SITE/rpm/bonk.repo" <<'REPO'
 [bonk]
 name=Bonk
@@ -65,7 +65,7 @@ repo_gpgcheck=1
 gpgkey=https://packages.bonk-os.app/bonk.asc
 REPO
 
-# Pages ne sert pas les liens symboliques : vrais fichiers.
+# Pages does not serve symlinks: real files.
 mkdir -p "$SITE/arch/x86_64"
 find "$ENTREE" -name '*.pkg.tar.zst' -exec cp -t "$SITE/arch/x86_64" {} +
 if compgen -G "$SITE/arch/x86_64/*.pkg.tar.zst" > /dev/null; then
@@ -82,11 +82,11 @@ if compgen -G "$SITE/arch/x86_64/*.pkg.tar.zst" > /dev/null; then
   )
 fi
 
-# Le manifeste est joint à la release juste après sa publication : absent un instant, sans gravité.
+# The manifest is attached right after the release is published: briefly missing, harmless.
 mkdir -p "$SITE/scoop"
 gh release download "${TAGS[0]}" --repo "$DEPOT" --dir "$SITE/scoop" --pattern bonk.json || echo "manifeste Scoop pas encore joint"
 
-# La version sans fenêtre ne porte pas de manifeste sur la release : il se déduit des empreintes.
+# The windowless build has no manifest on the release: it is derived from the hashes.
 python3 scripts/scoop-cli.py "$ENTREE/${TAGS[0]}.sums" "${TAGS[0]#v}" > "$SITE/scoop/bonk-cli.json"
 
 touch "$SITE/.nojekyll"
