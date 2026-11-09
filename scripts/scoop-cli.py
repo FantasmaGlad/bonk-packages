@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Écrit le manifeste Scoop de bonk-cli d'après le fichier SHA256SUMS d'une release.
-
-Usage : scoop-cli.py <SHA256SUMS> <version>
-"""
+"""Usage: scoop-cli.py <SHA256SUMS> <version>"""
 import json
 import re
 import sys

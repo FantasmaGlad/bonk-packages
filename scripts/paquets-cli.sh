@@ -63,7 +63,7 @@ SPEC
   find "$travail/rpm/RPMS" -name '*.rpm' -exec mv -t "$DOSSIER" {} +
 done
 
-# pacman attend .PKGINFO en tête de l'archive.
+# pacman expects .PKGINFO first in the archive.
 racine="$travail/pacman"
 mkdir -p "$racine"
 install -Dm755 "$travail/x86_64/bonk" "$racine/usr/bin/bonk"

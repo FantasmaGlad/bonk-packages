@@ -1,5 +1,5 @@
-# Installe la version de Bonk sans fenêtre pour cet utilisateur, sans droits d'administrateur.
-# Usage : irm https://packages.bonk-os.app/install.ps1 | iex
+# Installs the windowless Bonk for this user, without administrator rights.
+# Usage: irm https://packages.bonk-os.app/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
 
 $cible = switch ($env:PROCESSOR_ARCHITECTURE) {
@@ -16,7 +16,7 @@ New-Item -ItemType Directory -Path $travail | Out-Null
 try {
   $archive = Join-Path $travail "$dossier.zip"
   Invoke-WebRequest "$base/$dossier.zip" -OutFile $archive -UseBasicParsing
-  # GitHub sert ce fichier comme binaire : sa réponse directe serait des octets, jamais du texte.
+  # GitHub serves this file as binary: its direct answer would be bytes, never text.
   $empreintes = Join-Path $travail 'SHA256SUMS'
   Invoke-WebRequest "$base/SHA256SUMS" -OutFile $empreintes -UseBasicParsing
   $ligne = Get-Content $empreintes | Where-Object { $_ -match "\s\*?$([regex]::Escape("$dossier.zip"))\s*$" }
