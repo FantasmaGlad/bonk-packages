@@ -26,7 +26,7 @@ const EN: Text = {
   key: "Signing key:",
   fingerprint: "Fingerprint:",
   scripts: "Without a window or package manager, on Linux, macOS or Windows:",
-  cli: "Replace bonk with bonk-cli for the version without a window.",
+  cli: "Replace bonk with bonk-cli for the version without a window. Both install the bonk command: remove one before installing the other.",
   links: [
     ["https://bonk-os.app/install/", "Install"],
     ["https://security.bonk-os.app", "Security"],
@@ -44,7 +44,7 @@ const FR: Text = {
   key: "Clé de signature :",
   fingerprint: "Empreinte :",
   scripts: "Sans fenêtre ni gestionnaire de paquets, sous Linux, macOS ou Windows :",
-  cli: "Remplacez bonk par bonk-cli pour la version sans fenêtre.",
+  cli: "Remplacez bonk par bonk-cli pour la version sans fenêtre. Les deux installent la commande bonk : retirez l'un avant d'installer l'autre.",
   links: [
     ["https://bonk-os.app/install/?lang=fr", "Installer"],
     ["https://security.bonk-os.app/fr/", "Sécurité"],

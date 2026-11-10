@@ -26,7 +26,6 @@
 
 - Signing key: https://packages.bonk-os.app/bonk.asc
 - Fingerprint: `8DE6 80FF BE47 5B66 3E8B 019A 7578 66E3 4D67 014B`
-- `bonk-cli`, the version without a window: replace `bonk` in the commands below.
 
 ## <img src="docs/icons/debian.svg" width="20" height="20" valign="middle" alt="Debian"> Debian, Ubuntu (APT)
 
@@ -78,9 +77,27 @@ Server = https://packages.bonk-os.app/arch/$arch
 scoop install https://packages.bonk-os.app/scoop/bonk.json
 ```
 
+## Command line only
+
+`bonk-cli` is Bonk without a window, from the same repositories.
+
+| Manager | Install | Remove `bonk` first |
+| :--- | :--- | :--- |
+| **APT** | `sudo apt install bonk-cli` | `sudo apt remove bonk` |
+| **DNF** | `sudo dnf install bonk-cli` | `sudo dnf remove bonk` |
+| **Zypper** | `sudo zypper install bonk-cli` | `sudo zypper remove bonk` |
+| **pacman** | `sudo pacman -S bonk-cli` | `sudo pacman -R bonk` |
+| **Scoop** | `scoop install` the `bonk-cli.json` manifest | `scoop uninstall bonk` |
+
+```powershell
+scoop install https://packages.bonk-os.app/scoop/bonk-cli.json
+```
+
+Both packages install the `bonk` command and cannot be installed together. To go back, remove `bonk-cli`, then install `bonk`.
+
 ## Without a package manager
 
-`bonk-cli` only, no administrator rights.
+`bonk-cli` only, no administrator rights. Windows: x86_64, ARM64, x86. Linux and macOS: x86_64, ARM64.
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/install.sh | sh
