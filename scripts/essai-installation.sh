@@ -23,6 +23,7 @@ if command -v apt-get > /dev/null; then
   verifier
   apt-get remove -yq bonk
   apt-get install -yq --no-install-recommends bonk-cli
+  retour() { apt-get remove -yq bonk-cli && apt-get install -yq --no-install-recommends bonk; }
 elif command -v zypper > /dev/null; then
   command -v curl > /dev/null || zypper --non-interactive install --no-recommends curl
   # The install page commands: the .repo file picks the processor's repository ($basearch).
@@ -38,6 +39,7 @@ elif command -v zypper > /dev/null; then
   verifier
   zypper --non-interactive remove bonk
   zypper --non-interactive install --no-recommends bonk-cli
+  retour() { zypper --non-interactive remove bonk-cli && zypper --non-interactive install --no-recommends bonk; }
 elif command -v dnf > /dev/null; then
   curl -fsSL "$U/rpm/bonk.repo" -o /tmp/bonk.repo
   repo_local /tmp/bonk.repo > /etc/yum.repos.d/bonk.repo
@@ -45,6 +47,7 @@ elif command -v dnf > /dev/null; then
   verifier
   dnf remove -y bonk
   dnf install -y --setopt=install_weak_deps=False bonk-cli
+  retour() { dnf remove -y bonk-cli && dnf install -y --setopt=install_weak_deps=False bonk; }
 elif command -v pacman > /dev/null; then
   pacman-key --init
   curl -fsSL "$U/bonk.asc" -o /tmp/bonk.asc
@@ -55,9 +58,14 @@ elif command -v pacman > /dev/null; then
   verifier
   pacman -R --noconfirm bonk
   pacman -S --noconfirm bonk-cli
+  retour() { pacman -R --noconfirm bonk-cli && pacman -S --noconfirm bonk; }
 else
   apk add --no-cache curl
   curl -fsSL "$U/install.sh" | sh
   PATH="$HOME/.local/bin:$PATH"
+  retour() { :; }
 fi
+verifier
+# The documented way back: remove bonk-cli, install bonk.
+retour
 verifier
