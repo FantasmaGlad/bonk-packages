@@ -5,6 +5,7 @@ DOSSIER="${BONK_INSTALL_DIR:-$HOME/.local/bin}"
 case "$(uname -s)-$(uname -m)" in
   Linux-x86_64) cible=linux-x86_64 ;;
   Linux-aarch64 | Linux-arm64) cible=linux-aarch64 ;;
+  Linux-i686) cible=linux-i686 ;;
   Darwin-x86_64) cible=macos-x86_64 ;;
   Darwin-arm64) cible=macos-aarch64 ;;
   *) echo "Unsupported system: $(uname -s) $(uname -m)" >&2; exit 1 ;;
