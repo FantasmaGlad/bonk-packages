@@ -122,6 +122,7 @@ jobs:
       deployments: write
     steps:
       - name: Garder les trois derniers déploiements
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
