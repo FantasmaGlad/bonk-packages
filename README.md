@@ -93,7 +93,7 @@ scoop install https://packages.bonk-os.app/scoop/bonk.json
 scoop install https://packages.bonk-os.app/scoop/bonk-cli.json
 ```
 
-Both packages install the `bonk` command and cannot be installed together. To go back, remove `bonk-cli`, then install `bonk`.
+Both packages install the `bonk` command. APT, DNF, Zypper, pacman and Homebrew never keep both; with Scoop, remove one before installing the other. To go back, remove `bonk-cli`, then install `bonk`.
 
 ## Without a package manager
 
