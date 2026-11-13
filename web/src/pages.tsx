@@ -25,7 +25,8 @@ const EN: Text = {
   lead: "Signed package repositories for Bonk.",
   key: "Signing key:",
   fingerprint: "Fingerprint:",
-  scripts: "Without a window or package manager, on Linux, macOS or Windows; on Termux (Android, without root), the first one after pkg install termux-api:",
+  scripts:
+    "Without a window or package manager, on Linux, macOS or Windows; on Termux (Android, without root), the first one after pkg install termux-api:",
   cli: "Replace bonk with bonk-cli for the version without a window. Both install the bonk command: APT, DNF, Zypper and pacman replace one with the other; with Scoop, remove the other first.",
   links: [
     ["https://bonk-os.app/install/", "Install"],
@@ -43,7 +44,8 @@ const FR: Text = {
   lead: "Dépôts de paquets signés pour Bonk.",
   key: "Clé de signature :",
   fingerprint: "Empreinte :",
-  scripts: "Sans fenêtre ni gestionnaire de paquets, sous Linux, macOS ou Windows ; sous Termux (Android, sans root), le premier après pkg install termux-api :",
+  scripts:
+    "Sans fenêtre ni gestionnaire de paquets, sous Linux, macOS ou Windows ; sous Termux (Android, sans root), le premier après pkg install termux-api :",
   cli: "Remplacez bonk par bonk-cli pour la version sans fenêtre. Les deux installent la commande bonk : APT, DNF, Zypper et pacman remplacent l'un par l'autre ; avec Scoop, retirez l'autre d'abord.",
   links: [
     ["https://bonk-os.app/install/?lang=fr", "Installer"],
