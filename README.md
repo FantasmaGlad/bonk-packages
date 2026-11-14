@@ -97,7 +97,7 @@ Both packages install the `bonk` command. APT, DNF, Zypper, pacman and Homebrew 
 
 ## Without a package manager
 
-`bonk-cli` only, no administrator rights. Windows: x86_64, ARM64, x86. Linux and macOS: x86_64, ARM64.
+`bonk-cli` only, no administrator rights. Windows and Linux: x86_64, ARM64, x86. macOS: x86_64, ARM64. Termux on Android: ARM64, x86_64.
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/install.sh | sh
