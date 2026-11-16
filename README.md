@@ -39,6 +39,8 @@ echo "deb [signed-by=/etc/apt/keyrings/bonk.gpg] $url/debian stable main" \
 sudo apt update && sudo apt install bonk
 ```
 
+On 32-bit x86 (i386), only `bonk-cli` is published.
+
 ## <img src="docs/icons/fedora.svg" width="20" height="20" valign="middle" alt="Fedora"> Fedora, RHEL (DNF)
 
 ```bash
@@ -93,11 +95,11 @@ scoop install https://packages.bonk-os.app/scoop/bonk.json
 scoop install https://packages.bonk-os.app/scoop/bonk-cli.json
 ```
 
-Both packages install the `bonk` command. APT, DNF, Zypper, pacman and Homebrew never keep both; with Scoop, remove one before installing the other. To go back, remove `bonk-cli`, then install `bonk`.
+Both packages install the `bonk` command. With APT, DNF, Zypper and pacman, installing `bonk-cli` replaces `bonk` (Zypper and pacman ask first); with Homebrew and Scoop, remove `bonk` first. To go back, remove `bonk-cli`, then install `bonk`.
 
 ## Without a package manager
 
-`bonk-cli` only, no administrator rights. Windows and Linux: x86_64, ARM64, x86. macOS: x86_64, ARM64. Termux on Android: ARM64, x86_64. Chromebook, in the Linux development environment (Crostini): x86_64, ARM64; Bonk starts there but does not detect USB drives yet.
+`bonk-cli` only, no administrator rights. Windows 10+ and Linux: x86_64, ARM64, x86. macOS 12+: x86_64, ARM64. Termux on Android: ARM64, x86_64, with the Termux:API app from the same source as Termux (F-Droid or GitHub) and `pkg install termux-api`. Chromebook, in the Linux development environment (Crostini): x86_64, ARM64; Bonk starts there but does not detect USB drives yet.
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/install.sh | sh
