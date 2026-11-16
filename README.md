@@ -99,7 +99,7 @@ Both packages install the `bonk` command. With APT, DNF, Zypper and pacman, inst
 
 ## Without a package manager
 
-`bonk-cli` only, no administrator rights. Windows 10+ and Linux: x86_64, ARM64, x86. macOS 12+: x86_64, ARM64. Termux on Android: ARM64, x86_64, with the Termux:API app from the same source as Termux (F-Droid or GitHub) and `pkg install termux-api`. Chromebook, in the Linux development environment (Crostini): x86_64, ARM64; Bonk starts there but does not detect USB drives yet.
+`bonk-cli` only, no administrator rights. Windows 10+ and Linux: x86_64, ARM64, x86. macOS 12+: x86_64, ARM64. Termux on Android: ARM64, x86_64, with the Termux:API app from the same source as Termux (F-Droid or GitHub) and `pkg install termux-api`. Chromebook, in the Linux development environment (Crostini): x86_64, ARM64; Bonk sees a USB drive once it is enabled for Linux in the ChromeOS settings (Linux development environment, Manage USB devices).
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/install.sh | sh
