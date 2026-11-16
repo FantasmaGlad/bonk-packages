@@ -18,11 +18,8 @@ for tag in "${TAGS[@]}"; do
   dossier="$ENTREE/$tag"
   mkdir -p "$dossier"
   gh release download "$tag" --repo "$DEPOT" --dir "$dossier" \
-    --pattern '*.deb' --pattern '*.rpm' --pattern '*.pkg.tar.zst' --pattern SHA256SUMS \
-    --pattern '*-linux-*-musl.tar.gz' --pattern 'bonk-cli-*-linux-*.tar.gz'
+    --pattern '*.deb' --pattern '*.rpm' --pattern '*.pkg.tar.zst' --pattern SHA256SUMS
   (cd "$dossier" && sha256sum --ignore-missing --check --quiet SHA256SUMS && mv SHA256SUMS "$ENTREE/$tag.sums")
-  # Releases up to 0.0.5 carry no bonk-cli package: build them from the archives.
-  compgen -G "$dossier/bonk-cli_*.deb" > /dev/null || bash scripts/paquets-cli.sh "$dossier" "${tag#v}"
 done
 
 mkdir -p "$SITE/debian/pool"
