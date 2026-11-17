@@ -12,7 +12,19 @@ verifier() {
   [ "$obtenu" = "$attendu" ] || { echo "ERREUR : « $obtenu » au lieu de « $attendu »"; exit 1; }
   echo "OK $obtenu"
 }
-if command -v apt-get > /dev/null; then
+case "${PREFIX:-}" in
+  */com.termux/*) termux=true ;;
+  *) termux=false ;;
+esac
+if [ "$termux" = true ]; then
+  # Termux's apt reads keys and sources under its own prefix.
+  mkdir -p "$PREFIX/etc/apt/trusted.gpg.d" "$PREFIX/etc/apt/sources.list.d"
+  curl -fsSL "$U/bonk.asc" -o "$PREFIX/etc/apt/trusted.gpg.d/bonk.asc"
+  echo "deb $U/termux stable main" > "$PREFIX/etc/apt/sources.list.d/bonk.list"
+  apt-get update -q
+  apt-get install -yq bonk
+  retour() { :; }
+elif command -v apt-get > /dev/null; then
   apt-get update -q
   apt-get install -yq curl ca-certificates
   install -d /etc/apt/keyrings

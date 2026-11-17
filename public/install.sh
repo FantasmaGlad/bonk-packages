@@ -1,17 +1,19 @@
 #!/bin/sh
 set -eu
 
-# Termux runs the Android build: it reaches the drive through termux-usb.
+# Termux: Bonk's package repository, so that pkg upgrade keeps it current.
 if [ -n "${TERMUX_VERSION:-}" ] || [ "$(uname -o 2>/dev/null)" = Android ]; then
-  systeme=Android
-  DOSSIER="${BONK_INSTALL_DIR:-${PREFIX:-$HOME/.local}/bin}"
-else
-  systeme=$(uname -s)
-  DOSSIER="${BONK_INSTALL_DIR:-$HOME/.local/bin}"
+  mkdir -p "$PREFIX/etc/apt/trusted.gpg.d" "$PREFIX/etc/apt/sources.list.d"
+  curl -fsSL https://packages.bonk-os.app/bonk.asc -o "$PREFIX/etc/apt/trusted.gpg.d/bonk.asc"
+  echo "deb https://packages.bonk-os.app/termux stable main" > "$PREFIX/etc/apt/sources.list.d/bonk.list"
+  pkg install -y bonk
+  bonk --version
+  echo "Drives are reached through termux-usb (Termux:API): termux-usb -r -E -e 'bonk list' <device from termux-usb -l>"
+  exit 0
 fi
+systeme=$(uname -s)
+DOSSIER="${BONK_INSTALL_DIR:-$HOME/.local/bin}"
 case "$systeme-$(uname -m)" in
-  Android-aarch64) cible=android-aarch64 ;;
-  Android-x86_64) cible=android-x86_64 ;;
   Linux-x86_64) cible=linux-x86_64 ;;
   Linux-aarch64 | Linux-arm64) cible=linux-aarch64 ;;
   Linux-i686) cible=linux-i686 ;;
@@ -39,9 +41,6 @@ curl -fsSL "$base/$archive" -o "$travail/$archive"
 mkdir -p "$DOSSIER"
 install -m 755 "$travail"/bonk-*/bonk "$DOSSIER/bonk"
 "$DOSSIER/bonk" --version
-if [ "$systeme" = Android ]; then
-  echo "Drives are reached through termux-usb (Termux:API): termux-usb -r -E -e 'bonk list' <device from termux-usb -l>"
-fi
 case ":$PATH:" in
   *":$DOSSIER:"*) ;;
   *) echo "Add $DOSSIER to your PATH." ;;
