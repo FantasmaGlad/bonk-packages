@@ -13,12 +13,14 @@ mapfile -t TAGS < <(gh release list --repo "$DEPOT" --limit 10 --exclude-drafts 
   --json tagName --jq '.[].tagName' | head -n 2)
 [ "${#TAGS[@]}" -gt 0 ] || { echo "aucune release publiée"; exit 1; }
 echo "${TAGS[0]#v}" > "$SITE/version.txt"
+python3 scripts/liens.py "${TAGS[0]}" "$SITE"
 
 for tag in "${TAGS[@]}"; do
   dossier="$ENTREE/$tag"
   mkdir -p "$dossier"
   gh release download "$tag" --repo "$DEPOT" --dir "$dossier" \
-    --pattern '*.deb' --pattern '*.rpm' --pattern '*.pkg.tar.zst' --pattern SHA256SUMS
+    --pattern '*.deb' --pattern '*.rpm' --pattern '*.pkg.tar.zst' --pattern 'bonk-cli-*-android-*.tar.gz' \
+    --pattern SHA256SUMS
   (cd "$dossier" && sha256sum --ignore-missing --check --quiet SHA256SUMS && mv SHA256SUMS "$ENTREE/$tag.sums")
 done
 
@@ -79,6 +81,8 @@ if compgen -G "$SITE/arch/x86_64/*.pkg.tar.zst" > /dev/null; then
     done
   )
 fi
+
+bash scripts/termux.sh "$ENTREE" "$SITE"
 
 # The manifest is attached right after the release is published: briefly missing, harmless.
 mkdir -p "$SITE/scoop"

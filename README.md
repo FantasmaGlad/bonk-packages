@@ -79,6 +79,20 @@ Server = https://packages.bonk-os.app/arch/$arch
 scoop install https://packages.bonk-os.app/scoop/bonk.json
 ```
 
+## <img src="docs/icons/android.svg" width="20" height="20" valign="middle" alt="Android"> Termux (pkg)
+
+Command line only, ARM64 and x86_64, without root. Needs the Termux:API app from the same source as Termux (F-Droid or GitHub); `pkg` installs its `termux-api` package.
+
+```bash
+url=https://packages.bonk-os.app
+apt=$PREFIX/etc/apt
+curl -fsSL "$url/bonk.asc" -o "$apt/trusted.gpg.d/bonk.asc"
+echo "deb $url/termux stable main" > "$apt/sources.list.d/bonk.list"
+pkg install bonk
+```
+
+Drives are reached through `termux-usb`: `termux-usb -r -E -e 'bonk list' <device from termux-usb -l>`.
+
 ## Command line only
 
 `bonk-cli` is Bonk without a window, from the same repositories.
@@ -97,9 +111,13 @@ scoop install https://packages.bonk-os.app/scoop/bonk-cli.json
 
 Both packages install the `bonk` command. With APT, DNF, Zypper and pacman, installing `bonk-cli` replaces `bonk` (Zypper and pacman ask first); with Homebrew and Scoop, remove `bonk` first. To go back, remove `bonk-cli`, then install `bonk`.
 
+## Latest files
+
+Each file of the latest release has a stable address, its name without the version: for example `https://packages.bonk-os.app/download/bonk-linux-x86_64.tar.gz` or `https://packages.bonk-os.app/download/SHA256SUMS`.
+
 ## Without a package manager
 
-`bonk-cli` only, no administrator rights. Windows 10+ and Linux: x86_64, ARM64, x86. macOS 12+: x86_64, ARM64. Termux on Android: ARM64, x86_64, with the Termux:API app from the same source as Termux (F-Droid or GitHub) and `pkg install termux-api`. Chromebook, in the Linux development environment (Crostini): x86_64, ARM64; Bonk sees a USB drive once it is enabled for Linux in the ChromeOS settings (Linux development environment, Manage USB devices).
+`bonk-cli` only, no administrator rights. Windows 10+ and Linux: x86_64, ARM64, x86. macOS 12+: x86_64, ARM64. Termux: the script adds the repository above and runs `pkg install bonk`. Chromebook, in the Linux development environment (Crostini): x86_64, ARM64; Bonk sees a USB drive once it is enabled for Linux in the ChromeOS settings (Linux development environment, Manage USB devices).
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/install.sh | sh
