@@ -39,10 +39,6 @@ pre code { white-space: pre-wrap; overflow-wrap: anywhere; }
 .copy svg { width: 1.05em; height: 1.05em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .copy:hover, .copy:focus-visible { color: #000; }
 .copy:focus-visible { outline: 2px solid #000; outline-offset: 1px; }
-dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 1.2em; row-gap: 0.15em; margin: 0.3em 0; }
-dt { font-weight: 600; }
-dd { margin: 0; }
-ul { margin: 0.3em 0; padding-left: 1.1em; }
 footer { margin-top: 1.4em; font-size: 0.85em; }
 footer p { margin: 0; }
 @media (min-width: 901px) {
@@ -55,6 +51,4 @@ footer p { margin: 0; }
 }
 @media (max-width: 600px) {
   pre { width: 100%; padding: 1.5em 0 0; }
-  dl { grid-template-columns: 1fr; }
-  dt { margin-top: 0.5em; }
 }
