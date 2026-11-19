@@ -117,7 +117,7 @@ function Intro({ text }: { text: Text }) {
 function Others({ text }: { text: Text }) {
   return (
     <section>
-      <h2>macOS (Homebrew), Windows (Scoop)</h2>
+      <h2>macOS 12+ (Homebrew), Windows 10+ (Scoop)</h2>
       <pre>
         <code>brew install fantasmaglad/bonk/bonk</code>
       </pre>
