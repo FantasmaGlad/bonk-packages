@@ -82,33 +82,85 @@ sudo pacman -Sy bonk`,
   ],
 ];
 
+function Head({ text }: { text: Text }) {
+  return (
+    <head>
+      <meta charSet="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>{text.title}</title>
+      <meta name="description" content={text.description} />
+      <link rel="canonical" href={`${SITE}${text.path}`} />
+      <link rel="alternate" hrefLang="en" href={`${SITE}/`} />
+      <link rel="alternate" hrefLang="fr" href={`${SITE}/fr/`} />
+      <link rel="icon" href="/logo.png" />
+      <link rel="stylesheet" href="/site.css" />
+      <script src="/copy.js" defer />
+    </head>
+  );
+}
+
+function Intro({ text }: { text: Text }) {
+  return (
+    <header>
+      <h1>{text.title}</h1>
+      <p className="lead">
+        {text.lead} {text.cli}
+      </p>
+      <p className="key">
+        {text.key} <a href="/bonk.asc">bonk.asc</a> · <a href="/bonk.gpg">bonk.gpg</a> ·{" "}
+        {text.fingerprint} <code>{SPACED}</code>
+      </p>
+    </header>
+  );
+}
+
+function Others({ text }: { text: Text }) {
+  return (
+    <section>
+      <h2>macOS (Homebrew), Windows (Scoop)</h2>
+      <pre>
+        <code>brew install fantasmaglad/bonk/bonk</code>
+      </pre>
+      <pre>
+        <code>{`scoop install ${SITE}/scoop/bonk.json`}</code>
+      </pre>
+      <p>{text.scripts}</p>
+      <pre>
+        <code>{`curl -fsSL ${SITE}/install.sh | sh`}</code>
+      </pre>
+      <pre>
+        <code>{`irm ${SITE}/install.ps1 | iex`}</code>
+      </pre>
+    </section>
+  );
+}
+
+function Footer({ text }: { text: Text }) {
+  return (
+    <footer>
+      <p>
+        <a href="https://bonk-os.app">bonk-os.app</a> ·{" "}
+        {text.links.map(([href, label]) => (
+          <span key={href}>
+            <a href={href}>{label}</a> ·{" "}
+          </span>
+        ))}
+        <a href="https://github.com/FantasmaGlad/bonk-packages">GitHub</a> ·{" "}
+        <a href={text.other.href} lang={text.other.lang} hrefLang={text.other.lang}>
+          {text.other.label}
+        </a>
+      </p>
+    </footer>
+  );
+}
+
 function Page({ text }: { text: Text }) {
   return (
     <html lang={text.lang}>
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{text.title}</title>
-        <meta name="description" content={text.description} />
-        <link rel="canonical" href={`${SITE}${text.path}`} />
-        <link rel="alternate" hrefLang="en" href={`${SITE}/`} />
-        <link rel="alternate" hrefLang="fr" href={`${SITE}/fr/`} />
-        <link rel="icon" href="/logo.png" />
-        <link rel="stylesheet" href="/site.css" />
-        <script src="/copy.js" defer />
-      </head>
+      <Head text={text} />
       <body>
         <main>
-          <header>
-            <h1>{text.title}</h1>
-            <p className="lead">
-              {text.lead} {text.cli}
-            </p>
-            <p className="key">
-              {text.key} <a href="/bonk.asc">bonk.asc</a> · <a href="/bonk.gpg">bonk.gpg</a> ·{" "}
-              {text.fingerprint} <code>{SPACED}</code>
-            </p>
-          </header>
+          <Intro text={text} />
           {MANAGERS.map(([name, commands]) => (
             <section key={name}>
               <h2>{name}</h2>
@@ -117,37 +169,9 @@ function Page({ text }: { text: Text }) {
               </pre>
             </section>
           ))}
-          <section>
-            <h2>macOS (Homebrew), Windows (Scoop)</h2>
-            <pre>
-              <code>brew install fantasmaglad/bonk/bonk</code>
-            </pre>
-            <pre>
-              <code>{`scoop install ${SITE}/scoop/bonk.json`}</code>
-            </pre>
-            <p>{text.scripts}</p>
-            <pre>
-              <code>{`curl -fsSL ${SITE}/install.sh | sh`}</code>
-            </pre>
-            <pre>
-              <code>{`irm ${SITE}/install.ps1 | iex`}</code>
-            </pre>
-          </section>
+          <Others text={text} />
         </main>
-        <footer>
-          <p>
-            <a href="https://bonk-os.app">bonk-os.app</a> ·{" "}
-            {text.links.map(([href, label]) => (
-              <span key={href}>
-                <a href={href}>{label}</a> ·{" "}
-              </span>
-            ))}
-            <a href="https://github.com/FantasmaGlad/bonk-packages">GitHub</a> ·{" "}
-            <a href={text.other.href} lang={text.other.lang} hrefLang={text.other.lang}>
-              {text.other.label}
-            </a>
-          </p>
-        </footer>
+        <Footer text={text} />
       </body>
     </html>
   );

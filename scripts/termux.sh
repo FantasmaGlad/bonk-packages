@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Usage: termux.sh <directory of releases> <site directory>
-# Termux APT repository: the Android command line, packaged under the Termux prefix.
 set -euo pipefail
 umask 022
 

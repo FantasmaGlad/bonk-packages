@@ -1,4 +1,3 @@
-# Installs the windowless Bonk for this user, without administrator rights.
 # Usage: irm https://packages.bonk-os.app/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
 
