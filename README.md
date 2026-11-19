@@ -12,7 +12,7 @@
   <a href="https://packages.bonk-os.app"><b>packages.bonk-os.app</b></a> &nbsp;·&nbsp;
   <a href="https://packages.bonk-os.app/bonk.asc"><b>Signing key</b></a> &nbsp;·&nbsp;
   <a href="https://bonk-os.app/install/"><b>Install</b></a> &nbsp;·&nbsp;
-  <a href="https://bonk-os.app/reference/"><b>Commands</b></a> &nbsp;·&nbsp;
+  <a href="https://bonk-os.app/commands/"><b>Commands</b></a> &nbsp;·&nbsp;
   <a href="https://packages.bonk-os.app/fr/"><b>Français</b></a>
 </p>
 
@@ -97,10 +97,10 @@ Drives are reached through `termux-usb`: `termux-usb -r -E -e 'bonk list' <devic
 
 `bonk-cli` is Bonk without a window, from the same repositories.
 
-| Manager | Install | Remove `bonk` first |
+| Manager | Install | Remove `bonk` |
 | :--- | :--- | :--- |
 | **APT** | `sudo apt install bonk-cli` | `sudo apt remove bonk` |
-| **DNF** | `sudo dnf install bonk-cli` | `sudo dnf remove bonk` |
+| **DNF** | `sudo dnf install --allowerasing bonk-cli` | `sudo dnf remove bonk` |
 | **Zypper** | `sudo zypper install bonk-cli` | `sudo zypper remove bonk` |
 | **pacman** | `sudo pacman -S bonk-cli` | `sudo pacman -R bonk` |
 | **Scoop** | `scoop install` the `bonk-cli.json` manifest | `scoop uninstall bonk` |
@@ -109,7 +109,7 @@ Drives are reached through `termux-usb`: `termux-usb -r -E -e 'bonk list' <devic
 scoop install https://packages.bonk-os.app/scoop/bonk-cli.json
 ```
 
-Both packages install the `bonk` command. With APT, DNF, Zypper and pacman, installing `bonk-cli` replaces `bonk` (Zypper and pacman ask first); with Homebrew and Scoop, remove `bonk` first. To go back, remove `bonk-cli`, then install `bonk`.
+Both packages install the `bonk` command. With APT, DNF (`--allowerasing`), Zypper and pacman, installing `bonk-cli` replaces `bonk` (Zypper and pacman ask first); with Homebrew and Scoop, remove `bonk` first. To go back, remove `bonk-cli`, then install `bonk`.
 
 ## Latest files
 
