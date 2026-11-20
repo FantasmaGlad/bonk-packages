@@ -5,29 +5,29 @@
 <h1 align="center">bonk-packages</h1>
 
 <p align="center">
-  <b>Signed APT, DNF, Zypper and pacman repositories, Scoop manifests and install scripts for Bonk.</b>
+  Signed APT, DNF, Zypper and pacman repositories, Scoop manifests and install scripts for Bonk.
 </p>
 
 <p align="center">
-  <a href="https://packages.bonk-os.app"><b>packages.bonk-os.app</b></a> &nbsp;·&nbsp;
-  <a href="https://packages.bonk-os.app/bonk.asc"><b>Signing key</b></a> &nbsp;·&nbsp;
-  <a href="https://bonk-os.app/install/"><b>Install</b></a> &nbsp;·&nbsp;
-  <a href="https://bonk-os.app/commands/"><b>Commands</b></a> &nbsp;·&nbsp;
-  <a href="https://packages.bonk-os.app/fr/"><b>Français</b></a>
+  <a href="https://packages.bonk-os.app">packages.bonk-os.app</a>,
+  <a href="https://packages.bonk-os.app/bonk.asc">Signing key</a>,
+  <a href="https://bonk-os.app/install/">Install</a>,
+  <a href="https://packages.bonk-os.app/fr/">Français</a>
 </p>
 
 <p align="center">
   <a href="https://github.com/FantasmaGlad/bonk-packages/actions/workflows/publier.yml"><img src="https://github.com/FantasmaGlad/bonk-packages/actions/workflows/publier.yml/badge.svg?branch=main" alt="Publish"></a>
 </p>
 
----
-
 ## Key
 
-- Signing key: https://packages.bonk-os.app/bonk.asc
-- Fingerprint: `8DE6 80FF BE47 5B66 3E8B 019A 7578 66E3 4D67 014B`
+RSA 4096, valid until 2031-10-30, at <https://packages.bonk-os.app/bonk.asc>:
 
-## <img src="docs/icons/debian.svg" width="20" height="20" valign="middle" alt="Debian"> Debian, Ubuntu (APT)
+```text
+8DE6 80FF BE47 5B66 3E8B  019A 7578 66E3 4D67 014B
+```
+
+## <img src="docs/icons/debian.svg" width="20" height="20" valign="middle" alt="Debian"> Debian, Ubuntu
 
 ```bash
 url=https://packages.bonk-os.app
@@ -39,9 +39,9 @@ echo "deb [signed-by=/etc/apt/keyrings/bonk.gpg] $url/debian stable main" \
 sudo apt update && sudo apt install bonk
 ```
 
-On 32-bit x86 (i386), only `bonk-cli` is published.
+On 32-bit x86, only `bonk-cli` is published.
 
-## <img src="docs/icons/fedora.svg" width="20" height="20" valign="middle" alt="Fedora"> Fedora, RHEL (DNF)
+## <img src="docs/icons/fedora.svg" width="20" height="20" valign="middle" alt="Fedora"> Fedora, RHEL
 
 ```bash
 sudo curl -fsSL https://packages.bonk-os.app/rpm/bonk.repo \
@@ -49,7 +49,7 @@ sudo curl -fsSL https://packages.bonk-os.app/rpm/bonk.repo \
 sudo dnf install bonk
 ```
 
-## <img src="docs/icons/opensuse.svg" width="20" height="20" valign="middle" alt="openSUSE"> openSUSE (Zypper)
+## <img src="docs/icons/opensuse.svg" width="20" height="20" valign="middle" alt="openSUSE"> openSUSE
 
 ```bash
 url=https://packages.bonk-os.app
@@ -58,14 +58,16 @@ sudo zypper addrepo "$url/rpm/bonk.repo"
 sudo zypper refresh && sudo zypper install bonk
 ```
 
-## <img src="docs/icons/arch.svg" width="20" height="20" valign="middle" alt="Arch Linux"> Arch Linux (pacman)
+## <img src="docs/icons/arch.svg" width="20" height="20" valign="middle" alt="Arch Linux"> Arch Linux
+
+x86_64 only.
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/bonk.asc | sudo pacman-key --add -
 sudo pacman-key --lsign-key 8DE680FFBE475B663E8B019A757866E34D67014B
 ```
 
-Then add to `/etc/pacman.conf` and run `sudo pacman -Sy bonk`:
+Add this to `/etc/pacman.conf`, then run `sudo pacman -Sy bonk`:
 
 ```ini
 [bonk]
@@ -73,15 +75,15 @@ SigLevel = Required
 Server = https://packages.bonk-os.app/arch/$arch
 ```
 
-## <img src="docs/icons/windows.svg" width="20" height="20" valign="middle" alt="Windows"> Windows (Scoop)
+## <img src="docs/icons/windows.svg" width="20" height="20" valign="middle" alt="Windows"> Windows
 
 ```powershell
 scoop install https://packages.bonk-os.app/scoop/bonk.json
 ```
 
-## <img src="docs/icons/android.svg" width="20" height="20" valign="middle" alt="Android"> Termux (pkg)
+## <img src="docs/icons/android.svg" width="20" height="20" valign="middle" alt="Android"> Termux
 
-Command line only, ARM64 and x86_64, without root. Needs the Termux:API app from the same source as Termux (F-Droid or GitHub); `pkg` installs its `termux-api` package.
+Command line only, on ARM64 and x86_64, without root. It needs the Termux:API app from the same source as Termux, F-Droid or GitHub.
 
 ```bash
 url=https://packages.bonk-os.app
@@ -91,33 +93,29 @@ echo "deb $url/termux stable main" > "$apt/sources.list.d/bonk.list"
 pkg install bonk
 ```
 
-Drives are reached through `termux-usb`: `termux-usb -r -E -e 'bonk list' <device from termux-usb -l>`.
+Drives are reached through `termux-usb`:
+
+```bash
+termux-usb -r -E -e 'bonk list' <device from termux-usb -l>
+```
 
 ## Command line only
 
-`bonk-cli` is Bonk without a window, from the same repositories.
+`bonk-cli` is Bonk without its window, from the same repositories. Both packages install the `bonk` command.
 
-| Manager | Install | Remove `bonk` |
+| Manager | Install | Remove `bonk` first |
 | :--- | :--- | :--- |
-| **APT** | `sudo apt install bonk-cli` | `sudo apt remove bonk` |
-| **DNF** | `sudo dnf install --allowerasing bonk-cli` | `sudo dnf remove bonk` |
-| **Zypper** | `sudo zypper install bonk-cli` | `sudo zypper remove bonk` |
-| **pacman** | `sudo pacman -S bonk-cli` | `sudo pacman -R bonk` |
-| **Scoop** | `scoop install` the `bonk-cli.json` manifest | `scoop uninstall bonk` |
+| **APT** | `sudo apt install bonk-cli` | no |
+| **DNF** | `sudo dnf install --allowerasing bonk-cli` | no |
+| **Zypper** | `sudo zypper install bonk-cli` | no, asks |
+| **pacman** | `sudo pacman -S bonk-cli` | no, asks |
+| **Scoop** | `scoop install` [bonk-cli.json](https://packages.bonk-os.app/scoop/bonk-cli.json) | yes |
 
-```powershell
-scoop install https://packages.bonk-os.app/scoop/bonk-cli.json
-```
-
-Both packages install the `bonk` command. With APT, DNF (`--allowerasing`), Zypper and pacman, installing `bonk-cli` replaces `bonk` (Zypper and pacman ask first); with Homebrew and Scoop, remove `bonk` first. To go back, remove `bonk-cli`, then install `bonk`.
-
-## Latest files
-
-Each file of the latest release has a stable address, its name without the version: for example `https://packages.bonk-os.app/download/bonk-linux-x86_64.tar.gz` or `https://packages.bonk-os.app/download/SHA256SUMS`.
+To go back, remove `bonk-cli`, then install `bonk`.
 
 ## Without a package manager
 
-`bonk-cli` only, no administrator rights. Windows 10+ and Linux: x86_64, ARM64, x86. macOS 12+: x86_64, ARM64. Termux: the script adds the repository above and runs `pkg install bonk`. Chromebook, in the Linux development environment (Crostini): x86_64, ARM64; Bonk sees a USB drive once it is enabled for Linux in the ChromeOS settings (Linux development environment, Manage USB devices).
+`bonk-cli` only, without administrator rights: Linux and Windows 10 or later on x86_64, ARM64 and x86; macOS 12 or later on x86_64 and ARM64. On Termux, the script adds the repository above.
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/install.sh | sh
@@ -127,8 +125,22 @@ curl -fsSL https://packages.bonk-os.app/install.sh | sh
 irm https://packages.bonk-os.app/install.ps1 | iex
 ```
 
----
+On a Chromebook, run the script in the Linux development environment, then enable the USB drive for Linux in the ChromeOS settings.
 
-License: view-only, all rights reserved ([LICENSE](LICENSE)) · Security: [SECURITY.md](SECURITY.md) · Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+## Latest files
 
-<sub>Related repositories: [Bonk](https://github.com/FantasmaGlad/Bonk) (application) · [BonkWeb](https://github.com/FantasmaGlad/BonkWeb) (website) · [bonk-catalog](https://github.com/FantasmaGlad/bonk-catalog) (image catalog) · [homebrew-bonk](https://github.com/FantasmaGlad/homebrew-bonk) (Homebrew tap) · [bonk-security](https://github.com/FantasmaGlad/bonk-security) (security site) · Security policy: [security.bonk-os.app](https://security.bonk-os.app), [`/.well-known/security.txt`](https://bonk-os.app/.well-known/security.txt)</sub>
+Each file of the latest release keeps a stable address, its name without the version, such as <https://packages.bonk-os.app/download/SHA256SUMS>.
+
+## License
+
+View-only, all rights reserved: [LICENSE](LICENSE).
+
+Report a vulnerability as described in [SECURITY.md](SECURITY.md). Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Related repositories
+
+- [Bonk](https://github.com/FantasmaGlad/Bonk): application
+- [BonkWeb](https://github.com/FantasmaGlad/BonkWeb): website
+- [bonk-catalog](https://github.com/FantasmaGlad/bonk-catalog): image catalog
+- [homebrew-bonk](https://github.com/FantasmaGlad/homebrew-bonk): Homebrew tap
+- [bonk-security](https://github.com/FantasmaGlad/bonk-security): security site
