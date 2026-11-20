@@ -105,11 +105,11 @@ termux-usb -r -E -e 'bonk list' <device from termux-usb -l>
 
 | Manager | Install | Remove `bonk` first |
 | :--- | :--- | :--- |
-| **APT** | `sudo apt install bonk-cli` | no |
-| **DNF** | `sudo dnf install --allowerasing bonk-cli` | no |
-| **Zypper** | `sudo zypper install bonk-cli` | no, asks |
-| **pacman** | `sudo pacman -S bonk-cli` | no, asks |
-| **Scoop** | `scoop install` [bonk-cli.json](https://packages.bonk-os.app/scoop/bonk-cli.json) | yes |
+| <img src="docs/icons/debian.svg" width="20" height="20" valign="middle" alt="Debian">&nbsp;**APT** | `sudo apt install bonk-cli` | no |
+| <img src="docs/icons/fedora.svg" width="20" height="20" valign="middle" alt="Fedora">&nbsp;**DNF** | `sudo dnf install --allowerasing bonk-cli` | no |
+| <img src="docs/icons/opensuse.svg" width="20" height="20" valign="middle" alt="openSUSE">&nbsp;**Zypper** | `sudo zypper install bonk-cli` | no, asks |
+| <img src="docs/icons/arch.svg" width="20" height="20" valign="middle" alt="Arch Linux">&nbsp;**pacman** | `sudo pacman -S bonk-cli` | no, asks |
+| <img src="docs/icons/windows.svg" width="20" height="20" valign="middle" alt="Windows">&nbsp;**Scoop** | `scoop install` [bonk-cli.json](https://packages.bonk-os.app/scoop/bonk-cli.json) | yes |
 
 To go back, remove `bonk-cli`, then install `bonk`.
 
@@ -139,8 +139,10 @@ Report a vulnerability as described in [SECURITY.md](SECURITY.md). Contributions
 
 ## Related repositories
 
-- [Bonk](https://github.com/FantasmaGlad/Bonk): application
-- [BonkWeb](https://github.com/FantasmaGlad/BonkWeb): website
-- [bonk-catalog](https://github.com/FantasmaGlad/bonk-catalog): image catalog
-- [homebrew-bonk](https://github.com/FantasmaGlad/homebrew-bonk): Homebrew tap
-- [bonk-security](https://github.com/FantasmaGlad/bonk-security): security site
+| Repository | Content |
+| :--- | :--- |
+| <img src="docs/icons/bonk.png" width="20" height="20" valign="middle" alt="Bonk">&nbsp;**[Bonk](https://github.com/FantasmaGlad/Bonk)** | application |
+| <img src="docs/icons/bonk.png" width="20" height="20" valign="middle" alt="BonkWeb">&nbsp;**[BonkWeb](https://github.com/FantasmaGlad/BonkWeb)** | website |
+| <img src="docs/icons/bonk.png" width="20" height="20" valign="middle" alt="bonk-catalog">&nbsp;**[bonk-catalog](https://github.com/FantasmaGlad/bonk-catalog)** | image catalog |
+| <img src="docs/icons/homebrew.svg" width="20" height="20" valign="middle" alt="homebrew-bonk">&nbsp;**[homebrew-bonk](https://github.com/FantasmaGlad/homebrew-bonk)** | Homebrew tap |
+| <img src="docs/icons/bonk.png" width="20" height="20" valign="middle" alt="bonk-security">&nbsp;**[bonk-security](https://github.com/FantasmaGlad/bonk-security)** | security site |
