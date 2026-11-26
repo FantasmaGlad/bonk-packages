@@ -43,5 +43,15 @@ install -m 755 "$travail"/bonk-*/bonk "$DOSSIER/bonk"
 "$DOSSIER/bonk" --version
 case ":$PATH:" in
   *":$DOSSIER:"*) ;;
-  *) echo "Add $DOSSIER to your PATH." ;;
+  *)
+    # macOS and many distributions leave ~/.local/bin out of a new terminal's PATH.
+    case "${SHELL:-}" in
+      */zsh) profil="$HOME/.zshrc" ;;
+      */bash) if [ "$systeme" = Darwin ]; then profil="$HOME/.bash_profile"; else profil="$HOME/.bashrc"; fi ;;
+      *) profil="$HOME/.profile" ;;
+    esac
+    ligne="export PATH=\"$DOSSIER:\$PATH\""
+    grep -qsxF "$ligne" "$profil" || printf '\n%s\n' "$ligne" >> "$profil"
+    echo "$DOSSIER is in PATH from $profil: open a new terminal, or run: $ligne"
+    ;;
 esac
