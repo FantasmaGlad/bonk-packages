@@ -142,7 +142,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ["debian:13", "ubuntu:24.04", "fedora:latest", "opensuse/tumbleweed:latest", "archlinux:latest", "alpine:3", "termux/termux-docker:x86_64"]
+        image: ["debian:13", "ubuntu:24.04", "fedora:latest", "opensuse/tumbleweed:latest", "archlinux:latest", "termux/termux-docker:x86_64"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -152,17 +152,51 @@ jobs:
           IMAGE: ${{ matrix.image }}
         run: docker run --rm --volume "$PWD/scripts:/s:ro" "$IMAGE" sh /s/essai-installation.sh
 
+  # The scripts of this tree, as a user runs them: a new terminal must find bonk.
+  scripts:
+    name: script (${{ matrix.nom }})
+    needs: construire
+    if: needs.construire.outputs.a_faire == 'true'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { nom: crostini, os: ubuntu-24.04, image: "debian:13", coquille: bash }
+          - { nom: alpine, os: ubuntu-24.04, image: "alpine:3", coquille: sh }
+          - { nom: macos, os: macos-latest, coquille: zsh }
+          - { nom: windows, os: windows-2025 }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Linux, dans un conteneur
+        if: matrix.image
+        env:
+          IMAGE: ${{ matrix.image }}
+          COQUILLE: ${{ matrix.coquille }}
+        run: docker run --rm --volume "$PWD:/d:ro" "$IMAGE" sh /d/scripts/essai-script.sh "$COQUILLE" /d/public/install.sh
+      - name: macOS
+        if: runner.os == 'macOS'
+        run: sh scripts/essai-script.sh zsh public/install.sh
+      - name: Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-Expression (Get-Content -Raw public\install.ps1)
+          $dossier = "$env:LOCALAPPDATA\Programs\Bonk"
+          if (([Environment]::GetEnvironmentVariable('Path', 'User') -split ';') -notcontains $dossier) { throw 'bonk absent du PATH de l''utilisateur' }
+          $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+          (Get-Command bonk).Source
+          bonk --version
+
   installer-windows:
     name: installer (windows)
     needs: publication
     runs-on: windows-2025
     timeout-minutes: 15
     steps:
-      - name: Script d'installation
-        shell: pwsh
-        run: |
-          irm https://packages.bonk-os.app/install.ps1 | iex
-          & "$env:LOCALAPPDATA\Programs\Bonk\bonk.exe" --version
       - name: Scoop
         shell: pwsh
         run: |
