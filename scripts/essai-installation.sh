@@ -72,10 +72,8 @@ elif command -v pacman > /dev/null; then
   pacman -S --noconfirm bonk-cli
   retour() { pacman -R --noconfirm bonk-cli && pacman -S --noconfirm bonk; }
 else
-  apk add --no-cache curl
-  curl -fsSL "$U/install.sh" | sh
-  PATH="$HOME/.local/bin:$PATH"
-  retour() { :; }
+  echo "ERREUR : aucun gestionnaire de paquets connu ; le script d'installation a son propre essai (essai-script.sh)" >&2
+  exit 1
 fi
 verifier
 # The documented way back: remove bonk-cli, install bonk.

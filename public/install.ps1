@@ -31,7 +31,10 @@ try {
 }
 $chemins = [Environment]::GetEnvironmentVariable('Path', 'User')
 if (($chemins -split ';') -notcontains $destination) {
-  [Environment]::SetEnvironmentVariable('Path', "$chemins;$destination", 'User')
-  Write-Output 'Open a new terminal to use bonk.'
+  $nouveaux = if ($chemins) { "$chemins;$destination" } else { $destination }
+  [Environment]::SetEnvironmentVariable('Path', $nouveaux, 'User')
+  Write-Output "$destination added to the user PATH; terminals opened before need restarting."
 }
-& (Join-Path $destination 'bonk.exe') --version
+# Run through iex, the script shares the user's session: bonk works there at once.
+if (($env:Path -split ';') -notcontains $destination) { $env:Path = "$env:Path;$destination" }
+bonk --version

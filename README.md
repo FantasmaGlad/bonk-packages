@@ -81,6 +81,8 @@ Server = https://packages.bonk-os.app/arch/$arch
 scoop install https://packages.bonk-os.app/scoop/bonk.json
 ```
 
+Command line only: `bonk-cli.json` in place of `bonk.json`, after `scoop uninstall bonk`.
+
 ## <img src="docs/icons/android.svg" width="20" height="20" valign="middle" alt="Android"> Termux
 
 Command line only, on ARM64 and x86_64, without root. It needs the Termux:API app from the same source as Termux, F-Droid or GitHub.
@@ -109,13 +111,12 @@ termux-usb -r -E -e 'bonk list' <device from termux-usb -l>
 | <img src="docs/icons/fedora.svg" width="20" height="20" valign="middle" alt="Fedora">&nbsp;**DNF** | `sudo dnf install --allowerasing bonk-cli` | no |
 | <img src="docs/icons/opensuse.svg" width="20" height="20" valign="middle" alt="openSUSE">&nbsp;**Zypper** | `sudo zypper install bonk-cli` | no, asks |
 | <img src="docs/icons/arch.svg" width="20" height="20" valign="middle" alt="Arch Linux">&nbsp;**pacman** | `sudo pacman -S bonk-cli` | no, asks |
-| <img src="docs/icons/windows.svg" width="20" height="20" valign="middle" alt="Windows">&nbsp;**Scoop** | `scoop install` [bonk-cli.json](https://packages.bonk-os.app/scoop/bonk-cli.json) | yes |
 
 To go back, remove `bonk-cli`, then install `bonk`.
 
 ## Without a package manager
 
-`bonk-cli` only, without administrator rights: Linux and Windows 10 or later on x86_64, ARM64 and x86; macOS 12 or later on x86_64 and ARM64. On Termux, the script adds the repository above.
+`bonk-cli` only, without administrator rights: Linux and Windows 10 or later on x86_64, ARM64 and x86; macOS 12 or later on Intel and Apple silicon. The script puts `bonk` in `~/.local/bin` and adds it to the shell's `PATH`; on Windows, in `%LOCALAPPDATA%\Programs\Bonk`, added to the user's `PATH`. On Termux, it adds the repository above.
 
 ```bash
 curl -fsSL https://packages.bonk-os.app/install.sh | sh
