@@ -21,6 +21,7 @@
 
 <p align="center">
   <a href="https://github.com/FantasmaGlad/bonk-packages/actions/workflows/publier.yml"><img src="https://github.com/FantasmaGlad/bonk-packages/actions/workflows/publier.yml/badge.svg?branch=main" alt="Publish"></a>
+  <a href="https://packages.bonk-os.app"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FFantasmaGlad%2Fbonk-packages%2Fcompteurs%2Fpaquets.json" alt="Downloads"></a>
 </p>
 
 ## Key

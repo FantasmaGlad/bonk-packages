@@ -102,7 +102,8 @@ case "$systeme-$(uname -m)" in
   *) echo "Unsupported system: $systeme $(uname -m)" >&2; exit 1 ;;
 esac
 version=$(curl -fsSL https://packages.bonk-os.app/version.txt)
-base="${BONK_RELEASE_URL:-https://github.com/$DEPOT/releases/download/v$version}"
+# The release files, through a counted redirect to GitHub.
+base="${BONK_RELEASE_URL:-https://packages.bonk-os.app/dl/script/v$version}"
 travail=$(mktemp -d)
 nettoyer() {
   if [ -d "$travail/gnupg" ]; then gpgconf --homedir "$travail/gnupg" --kill all 2> /dev/null || true; fi
