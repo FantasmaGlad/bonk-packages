@@ -16,7 +16,7 @@ for ligne in chemin.read_text(encoding="utf-8").splitlines():
 def entree(cible: str) -> dict[str, str]:
     dossier = f"bonk-cli-{version}-{cible}"
     return {
-        "url": f"https://github.com/FantasmaGlad/Bonk/releases/download/v{version}/{dossier}.zip",
+        "url": f"https://packages.bonk-os.app/dl/scoop/v{version}/{dossier}.zip",
         "hash": empreintes[f"{dossier}.zip"],
         "extract_dir": dossier,
     }

@@ -98,7 +98,8 @@ $cible = switch ($env:PROCESSOR_ARCHITECTURE) {
 }
 $version = (Invoke-RestMethod https://packages.bonk-os.app/version.txt).Trim()
 $dossier = "bonk-cli-$version-$cible"
-$base = if ($env:BONK_RELEASE_URL) { $env:BONK_RELEASE_URL } else { "https://github.com/$depot/releases/download/v$version" }
+# The release files, through a counted redirect to GitHub.
+$base = if ($env:BONK_RELEASE_URL) { $env:BONK_RELEASE_URL } else { "https://packages.bonk-os.app/dl/script/v$version" }
 $travail = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
 New-Item -ItemType Directory -Path $travail | Out-Null
 try {

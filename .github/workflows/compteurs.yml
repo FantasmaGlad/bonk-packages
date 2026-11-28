@@ -1,0 +1,60 @@
+name: compteurs
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  pull_request:
+    paths:
+      - "scripts/compteurs.py"
+      - "scripts/test_compteurs.py"
+      - ".github/workflows/compteurs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compteurs
+  cancel-in-progress: false
+
+jobs:
+  compter:
+    name: compter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Essais
+        working-directory: scripts
+        run: python3 -m unittest -q test_compteurs
+      # Its own branch: the daily commit never goes through main, its review and its checks.
+      - name: Compter les jours finis et écrire sur la branche compteurs
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+        run: |
+          gh auth setup-git
+          dossier=$(mktemp -d)
+          git -C "$dossier" init -q
+          git -C "$dossier" remote add origin "https://github.com/$REPO"
+          if git -C "$dossier" fetch -q --depth 1 origin compteurs; then
+            git -C "$dossier" checkout -q -b compteurs FETCH_HEAD
+          else
+            git -C "$dossier" checkout -q --orphan compteurs
+          fi
+          python3 scripts/compteurs.py "$dossier"
+          git -C "$dossier" add -A
+          if git -C "$dossier" diff --cached --quiet; then
+            exit 0
+          fi
+          git -C "$dossier" -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "chore(compteurs): relever les téléchargements de packages.bonk-os.app"
+          git -C "$dossier" push -q origin HEAD:compteurs
