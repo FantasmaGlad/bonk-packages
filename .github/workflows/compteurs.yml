@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -59,3 +60,9 @@ jobs:
             -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -m "chore(compteurs): relever les téléchargements de packages.bonk-os.app"
           git -C "$dossier" push -q origin HEAD:compteurs
+      # A push made with the workflow token starts no workflow: the copy to GitLab is asked for here.
+      - name: Copier vers GitLab
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run miroir.yml --repo "$GITHUB_REPOSITORY" --ref main
