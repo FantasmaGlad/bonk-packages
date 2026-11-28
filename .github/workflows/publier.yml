@@ -206,8 +206,8 @@ jobs:
           - { nom: linux-cosign, os: ubuntu-24.04, outil: cosign }
           - { nom: macos-gh, os: macos-latest, outil: gh }
           - { nom: macos-cosign, os: macos-latest, outil: cosign }
-          - { nom: windows-gh, os: windows-2025, outil: gh }
-          - { nom: windows-cosign, os: windows-2025, outil: cosign }
+          - { nom: windows-gh-gpg4win, os: windows-2025, outil: gh, gpg: gpg4win }
+          - { nom: windows-cosign-msys, os: windows-2025, outil: cosign, gpg: msys }
     env:
       GH_TOKEN: ${{ matrix.outil == 'gh' && github.token || '' }}
       GITHUB_TOKEN: ${{ matrix.outil == 'cosign' && github.token || '' }}
@@ -231,12 +231,22 @@ jobs:
       - name: gpg, macOS
         if: runner.os == 'macOS'
         run: command -v gpg || brew install gnupg
-      # The GnuPG installer of Chocolatey waits forever on the runner; Git for Windows ships gpg.
-      - name: gpg, Windows
-        if: runner.os == 'Windows'
+      # Git for Windows ships a gpg built for MSYS; Gpg4win is the native one users install.
+      - name: gpg de Git for Windows
+        if: matrix.gpg == 'msys'
         shell: pwsh
         run: |
           $outils = "$env:ProgramFiles\Git\usr\bin"
+          & "$outils\gpg.exe" --version
+          Add-Content $env:GITHUB_PATH $outils
+      # The GnuPG installer of Chocolatey waits forever on the runner.
+      - name: Gpg4win
+        if: matrix.gpg == 'gpg4win'
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          winget install --id GnuPG.Gpg4win --exact --silent --disable-interactivity --accept-package-agreements --accept-source-agreements
+          $outils = "${env:ProgramFiles(x86)}\GnuPG\bin"
           & "$outils\gpg.exe" --version
           Add-Content $env:GITHUB_PATH $outils
       - name: install.sh
