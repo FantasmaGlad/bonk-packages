@@ -7,8 +7,11 @@ $emetteur = 'https://token.actions.githubusercontent.com'
 
 function Test-Outil([string]$nom) { [bool](Get-Command $nom -ErrorAction SilentlyContinue) }
 
-# The gpg of Git for Windows reads C:\x as a relative path; it and Gpg4win both read C:/x.
-function ConvertTo-CheminGpg([string]$chemin) { $chemin.Replace('\', '/') }
+# A gpg built for MSYS (Git for Windows) reads paths as /c/x and says so on its Home line; Gpg4win reads C:/x.
+function ConvertTo-CheminGpg([string]$chemin, [bool]$msys) {
+  $chemin = $chemin.Replace('\', '/')
+  if ($msys -and $chemin -match '^([A-Za-z]):/(.*)$') { "/$($Matches[1].ToLower())/$($Matches[2])" } else { $chemin }
+}
 
 # Windows PowerShell turns the standard error of a native command into a terminating error under Stop.
 function Invoke-Outil([string]$nom, [string[]]$arguments) {
@@ -33,10 +36,11 @@ function Confirm-Signature([string]$travail, [string]$base, [string]$version) {
   }
   $gnupg = Join-Path $travail 'gnupg'
   New-Item -ItemType Directory -Path $gnupg | Out-Null
-  $dossier = ConvertTo-CheminGpg $gnupg
-  $import = Invoke-Outil gpg @('--homedir', $dossier, '--batch', '--import', (ConvertTo-CheminGpg $cle))
+  $msys = [bool]((Invoke-Outil gpg @('--version')).Sortie | Where-Object { $_ -match '^Home: /' })
+  $dossier = ConvertTo-CheminGpg $gnupg $msys
+  $import = Invoke-Outil gpg @('--homedir', $dossier, '--batch', '--import', (ConvertTo-CheminGpg $cle $msys))
   $etat = Invoke-Outil gpg @('--homedir', $dossier, '--batch', '--status-fd', '1', '--verify',
-    (ConvertTo-CheminGpg $signature), (ConvertTo-CheminGpg (Join-Path $travail 'SHA256SUMS')))
+    (ConvertTo-CheminGpg $signature $msys), (ConvertTo-CheminGpg (Join-Path $travail 'SHA256SUMS') $msys))
   Invoke-Outil gpgconf @('--homedir', $dossier, '--kill', 'all') | Out-Null
   # VALIDSIG ends with the fingerprint of the primary key that made the signature.
   if (-not ($etat.Sortie | Where-Object { $_ -match "^\[GNUPG:\] VALIDSIG .* $cleRelease$" })) {
@@ -54,6 +58,8 @@ function Test-AttestationCosign([string]$travail, [string]$archive, [string]$ver
   try {
     $reponse = Invoke-RestMethod "https://api.github.com/repos/$depot/attestations/sha256:$empreinte" -Headers $entetes
   } catch {
+    # 404: GitHub holds no attestation for this content.
+    if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) { return $false }
     throw "the attestations of $(Split-Path $archive -Leaf) could not be read from api.github.com: try again later, set GITHUB_TOKEN, or sign in with gh auth login. $($_.Exception.Message)"
   }
   $identite = "https://github.com/$depot/.github/workflows/binaires.yml@refs/tags/v$version"

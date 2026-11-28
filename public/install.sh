@@ -34,20 +34,25 @@ verifier_signature() {
   echo "SHA256SUMS signed by the Bonk release key $CLE_RELEASE."
 }
 
-# Without a token the API allows 60 requests an hour per address, shared behind a NAT.
+# Without a token the API allows 60 requests an hour per address, shared behind a NAT. Prints the HTTP status.
 lire_attestations() {
   adresse="https://api.github.com/repos/$DEPOT/attestations/sha256:$(empreinte "$1")"
   if [ -n "${GITHUB_TOKEN:-}" ]; then
-    curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "$adresse" -o "$travail/attestations.json"
+    curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" -w '%{http_code}' "$adresse" -o "$travail/attestations.json"
   else
-    curl -fsSL "$adresse" -o "$travail/attestations.json"
+    curl -sSL -w '%{http_code}' "$adresse" -o "$travail/attestations.json"
   fi
 }
 
 attestation_cosign() {
   identite="https://github.com/$DEPOT/.github/workflows/binaires.yml@refs/tags/v$version"
-  lire_attestations "$1" \
-    || echec "the attestations of $archive could not be read from api.github.com: try again later, set GITHUB_TOKEN, or sign in with gh auth login."
+  statut=$(lire_attestations "$1") || statut=000
+  case "$statut" in
+    200) ;;
+    # GitHub holds no attestation for this content.
+    404) return 1 ;;
+    *) echec "the attestations of $archive could not be read from api.github.com (HTTP $statut): try again later, set GITHUB_TOKEN, or sign in with gh auth login." ;;
+  esac
   nombre=$(jq '.attestations | length' "$travail/attestations.json")
   i=0
   while [ "$i" -lt "$nombre" ]; do
