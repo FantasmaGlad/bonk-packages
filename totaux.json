@@ -1,9 +1,0 @@
-{
- "homebrew": 0,
- "script": 0,
- "scoop": 0,
- "apt": 0,
- "rpm": 0,
- "pacman": 0,
- "termux": 0
-}

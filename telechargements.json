@@ -1,0 +1,21 @@
+{
+ "counted_until": "2026-11-27",
+ "total": 1381,
+ "github": {
+  "total": 1381,
+  "archive": 572,
+  "installer": 43,
+  "package": 750,
+  "android": 16
+ },
+ "repositories": 0,
+ "channels": {
+  "homebrew": 0,
+  "script": 0,
+  "scoop": 0,
+  "apt": 0,
+  "rpm": 0,
+  "pacman": 0,
+  "termux": 0
+ }
+}
