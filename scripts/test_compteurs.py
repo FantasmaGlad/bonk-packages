@@ -1,5 +1,4 @@
 import datetime
-import ipaddress
 import json
 import tempfile
 import unittest
@@ -7,14 +6,8 @@ from pathlib import Path
 
 import compteurs
 
-RUNNERS = [ipaddress.ip_network("4.148.0.0/16"), ipaddress.ip_network("2a01:111::/32")]
-
-
-def groupe(chemin: str, statut: int, nombre: int, adresse: str = "203.0.113.7") -> dict:
-    return {
-        "count": nombre,
-        "dimensions": {"clientRequestPath": chemin, "edgeResponseStatus": statut, "clientIP": adresse},
-    }
+def groupe(chemin: str, statut: int, nombre: int) -> dict:
+    return {"count": nombre, "dimensions": {"clientRequestPath": chemin, "edgeResponseStatus": statut}}
 
 
 class Canaux(unittest.TestCase):
@@ -48,19 +41,9 @@ class Canaux(unittest.TestCase):
             groupe("/debian/pool/bonk_0.1.6-1_amd64.deb", 200, 3),
             groupe("/debian/pool/bonk-cli_0.1.6-1_arm64.deb", 200, 2),
             groupe("/index.html", 200, 40),
-        ], RUNNERS)
-        self.assertEqual(comptes["all"]["apt"], 5)
-        self.assertEqual(sum(comptes["all"].values()), 5)
-
-    def test_les_executeurs_de_github_ne_sont_pas_des_appareils(self):
-        comptes = compteurs.compter([
-            groupe("/dl/script/v0.1.6/bonk-cli-0.1.6-linux-x86_64.tar.gz", 302, 30, "4.148.12.9"),
-            groupe("/dl/script/v0.1.6/bonk-cli-0.1.6-linux-x86_64.tar.gz", 302, 4, "198.51.100.20"),
-            groupe("/termux/pool/bonk_0.1.6_aarch64.deb", 200, 2, "2a01:111:f400::1"),
-            groupe("/termux/pool/bonk_0.1.6_aarch64.deb", 200, 1, "2001:db8::5"),
-        ], RUNNERS)
-        self.assertEqual((comptes["all"]["script"], comptes["devices"]["script"]), (34, 4))
-        self.assertEqual((comptes["all"]["termux"], comptes["devices"]["termux"]), (3, 1))
+        ])
+        self.assertEqual(comptes["apt"], 5)
+        self.assertEqual(sum(comptes.values()), 5)
 
 
 class Github(unittest.TestCase):
@@ -88,6 +71,11 @@ class Github(unittest.TestCase):
             with self.subTest(nom=nom):
                 self.assertEqual(compteurs.type_github(nom), attendu)
 
+    def test_les_fichiers_communs_a_chaque_release_restent_distincts(self):
+        self.assertEqual(compteurs.cle_github("v0.1.6", "bonk_0.1.6-1_amd64.deb"), "bonk_0.1.6-1_amd64.deb")
+        self.assertEqual(compteurs.cle_github("v0.1.6", "SHA256SUMS"), "v0.1.6/SHA256SUMS")
+        self.assertNotEqual(compteurs.cle_github("v0.1.0", "SHA256SUMS"), compteurs.cle_github("v0.1.6", "SHA256SUMS"))
+
     def test_une_release_supprimee_garde_ses_telechargements(self):
         with tempfile.TemporaryDirectory() as racine:
             dossier = Path(racine)
@@ -101,18 +89,20 @@ class Registre(unittest.TestCase):
         with tempfile.TemporaryDirectory() as racine:
             dossier = Path(racine)
             (dossier / "jours").mkdir()
-            ancien = dict.fromkeys(compteurs.CANAUX, 0) | {"apt": 900, "homebrew": 4}
-            (dossier / "jours" / "2026-11-28.json").write_text(json.dumps(ancien))
-            tous = dict.fromkeys(compteurs.CANAUX, 0) | {"apt": 450, "homebrew": 1}
-            appareils = dict.fromkeys(compteurs.CANAUX, 0) | {"apt": 300}
-            jour = {"all": tous, "devices": appareils}
-            (dossier / "jours" / "2026-11-29.json").write_text(json.dumps(jour))
-            github = {"bonk-0.1.6-windows-x86_64-setup.exe": 30, "bonk-cli-0.1.6-linux-x86_64.tar.gz": 20}
+            for jour, apt, homebrew in (("2026-11-28", 900, 4), ("2026-11-29", 450, 1)):
+                comptes = dict.fromkeys(compteurs.CANAUX, 0) | {"apt": apt, "homebrew": homebrew}
+                (dossier / "jours" / f"{jour}.json").write_text(json.dumps(comptes))
+            github = {
+                "bonk-0.1.6-windows-x86_64-setup.exe": 30,
+                "bonk-cli-0.1.6-linux-x86_64.tar.gz": 20,
+                "v0.1.6/SHA256SUMS": 70,
+                "v0.1.6/SHA256SUMS.asc": 40,
+            }
             resume = compteurs.ecrire_totaux(dossier, github)
             self.assertEqual(resume["counted_until"], "2026-11-29")
             self.assertEqual((resume["github"]["total"], resume["repositories"], resume["total"]), (50, 1350, 1400))
             self.assertEqual(resume["channels"]["homebrew"], 5)
-            self.assertEqual((resume["devices"]["total"], resume["devices"]["apt"]), (1204, 1200))
+            self.assertEqual(resume["raw"], 50 + 110 + 1350)
             self.assertEqual(json.loads((dossier / "telechargements.json").read_text()), resume)
             messages = {nom: json.loads((dossier / f"{nom}.json").read_text())["message"] for nom in ("total", "homebrew", "paquets")}
             self.assertEqual(messages, {"total": "1.4k", "homebrew": "5", "paquets": "1.4k"})

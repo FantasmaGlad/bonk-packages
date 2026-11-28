@@ -7,7 +7,6 @@ on GitHub, then rewrites telechargements.json and the badges. Needs CLOUDFLARE_A
 CLOUDFLARE_ZONE_ID; GITHUB_TOKEN when set.
 """
 import datetime
-import ipaddress
 import json
 import os
 import re
@@ -18,7 +17,6 @@ from pathlib import Path
 HOTE = "packages.bonk-os.app"
 GRAPHQL = "https://api.cloudflare.com/client/v4/graphql"
 RELEASES = "https://api.github.com/repos/FantasmaGlad/Bonk/releases?per_page=100&page={}"
-META = "https://api.github.com/meta"
 LIMITE = 10000
 PROGRAMME = r"bonk(-cli)?[-_][^/]+\.(tar\.gz|zip|exe|dmg|deb|rpm|pkg\.tar\.zst|apk)"
 # Cloudflare keeps 31 days of request analytics.
@@ -46,7 +44,7 @@ TYPES = {
 }
 REQUETE = """query($zone: String!, $jour: Date!) { viewer { zones(filter: {zoneTag: $zone}) {
   httpRequestsAdaptiveGroups(limit: %d, filter: {date: $jour, clientRequestHTTPHost: "%s"}) {
-    count dimensions { clientRequestPath edgeResponseStatus clientIP } } } } }""" % (LIMITE, HOTE)
+    count dimensions { clientRequestPath edgeResponseStatus } } } } }""" % (LIMITE, HOTE)
 
 
 def canal(chemin: str, statut: int) -> str | None:
@@ -56,28 +54,13 @@ def canal(chemin: str, statut: int) -> str | None:
     return None
 
 
-# The address is only compared with GitHub's published runner ranges, never kept.
-def reseaux_actions() -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
-    requete = urllib.request.Request(META, headers={"User-Agent": "bonk-packages"})
-    with urllib.request.urlopen(requete, timeout=60) as reponse:
-        return [ipaddress.ip_network(plage) for plage in json.load(reponse)["actions"]]
-
-
-def automatise(adresse: str, reseaux: list) -> bool:
-    ip = ipaddress.ip_address(adresse)
-    return any(ip in reseau for reseau in reseaux)
-
-
-def compter(groupes: list[dict], reseaux: list) -> dict[str, dict[str, int]]:
-    comptes = {"all": dict.fromkeys(CANAUX, 0), "devices": dict.fromkeys(CANAUX, 0)}
+def compter(groupes: list[dict]) -> dict[str, int]:
+    comptes = dict.fromkeys(CANAUX, 0)
     for groupe in groupes:
         dimensions = groupe["dimensions"]
         nom = canal(dimensions["clientRequestPath"], dimensions["edgeResponseStatus"])
-        if not nom:
-            continue
-        comptes["all"][nom] += groupe["count"]
-        if not automatise(dimensions["clientIP"], reseaux):
-            comptes["devices"][nom] += groupe["count"]
+        if nom:
+            comptes[nom] += groupe["count"]
     return comptes
 
 
@@ -99,6 +82,11 @@ def type_github(nom: str) -> str | None:
     return next((genre for genre, motif in TYPES.items() if motif.match(nom)), None)
 
 
+# Program files carry their version in their name; SHA256SUMS and the manifests repeat in every release.
+def cle_github(tag: str, nom: str) -> str:
+    return nom if type_github(nom) else f"{tag}/{nom}"
+
+
 def lire_github() -> dict[str, int]:
     entetes = {"Accept": "application/vnd.github+json", "User-Agent": "bonk-packages"}
     if os.environ.get("GITHUB_TOKEN"):
@@ -110,8 +98,7 @@ def lire_github() -> dict[str, int]:
             releases = json.load(reponse)
         for release in releases:
             for fichier in release["assets"]:
-                if type_github(fichier["name"]):
-                    fichiers[fichier["name"]] = fichier["download_count"]
+                fichiers[cle_github(release["tag_name"], fichier["name"])] = fichier["download_count"]
         if len(releases) < 100:
             break
     return fichiers
@@ -139,22 +126,12 @@ def badge(dossier: Path, nom: str, libelle: str, nombre: int) -> None:
     (dossier / f"{nom}.json").write_text(json.dumps(endpoint) + "\n")
 
 
-# A day counted before devices were told apart holds one flat count, from before the proxy: nothing to split.
-def lire_jour(fichier: Path) -> dict[str, dict[str, int]]:
-    jour = json.loads(fichier.read_text())
-    return jour if "all" in jour else {"all": jour, "devices": jour}
-
-
 def ecrire_totaux(dossier: Path, github: dict[str, int]) -> dict:
     canaux = dict.fromkeys(CANAUX, 0)
-    appareils = dict.fromkeys(CANAUX, 0)
     jours = sorted((dossier / "jours").glob("*.json"))
     for fichier in jours:
-        jour = lire_jour(fichier)
-        for nom, nombre in jour["all"].items():
+        for nom, nombre in json.loads(fichier.read_text()).items():
             canaux[nom] = canaux.get(nom, 0) + nombre
-        for nom, nombre in jour["devices"].items():
-            appareils[nom] = appareils.get(nom, 0) + nombre
     par_type = dict.fromkeys(TYPES, 0)
     for nom, nombre in github.items():
         genre = type_github(nom)
@@ -164,10 +141,10 @@ def ecrire_totaux(dossier: Path, github: dict[str, int]) -> dict:
     resume = {
         "counted_until": jours[-1].stem if jours else None,
         "total": sum(par_type.values()) + depots,
+        "raw": sum(github.values()) + depots,
         "github": {"total": sum(par_type.values()), **par_type},
         "repositories": depots,
         "channels": canaux,
-        "devices": {"total": sum(appareils.values()), **appareils},
     }
     (dossier / "telechargements.json").write_text(json.dumps(resume, indent=1) + "\n")
     badge(dossier, "total", "Downloads", resume["total"])
@@ -188,9 +165,8 @@ def main() -> None:
     dossier = Path(sys.argv[1])
     (dossier / "jours").mkdir(parents=True, exist_ok=True)
     jours = sys.argv[2:] or jours_a_compter(dossier, datetime.datetime.now(datetime.timezone.utc).date())
-    reseaux = reseaux_actions()
     for jour in jours:
-        comptes = compter(interroger(jour), reseaux)
+        comptes = compter(interroger(jour))
         (dossier / "jours" / f"{jour}.json").write_text(json.dumps(comptes, indent=1) + "\n")
         print(jour, comptes)
     (dossier / "totaux.json").unlink(missing_ok=True)
