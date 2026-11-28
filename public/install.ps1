@@ -7,6 +7,9 @@ $emetteur = 'https://token.actions.githubusercontent.com'
 
 function Test-Outil([string]$nom) { [bool](Get-Command $nom -ErrorAction SilentlyContinue) }
 
+# The gpg of Git for Windows reads C:\x as a relative path; it and Gpg4win both read C:/x.
+function ConvertTo-CheminGpg([string]$chemin) { $chemin.Replace('\', '/') }
+
 # Windows PowerShell turns the standard error of a native command into a terminating error under Stop.
 function Invoke-Outil([string]$nom, [string[]]$arguments) {
   $ErrorActionPreference = 'Continue'
@@ -30,9 +33,11 @@ function Confirm-Signature([string]$travail, [string]$base, [string]$version) {
   }
   $gnupg = Join-Path $travail 'gnupg'
   New-Item -ItemType Directory -Path $gnupg | Out-Null
-  $import = Invoke-Outil gpg @('--homedir', $gnupg, '--batch', '--import', $cle)
-  $etat = Invoke-Outil gpg @('--homedir', $gnupg, '--batch', '--status-fd', '1', '--verify', $signature, (Join-Path $travail 'SHA256SUMS'))
-  Invoke-Outil gpgconf @('--homedir', $gnupg, '--kill', 'all') | Out-Null
+  $dossier = ConvertTo-CheminGpg $gnupg
+  $import = Invoke-Outil gpg @('--homedir', $dossier, '--batch', '--import', (ConvertTo-CheminGpg $cle))
+  $etat = Invoke-Outil gpg @('--homedir', $dossier, '--batch', '--status-fd', '1', '--verify',
+    (ConvertTo-CheminGpg $signature), (ConvertTo-CheminGpg (Join-Path $travail 'SHA256SUMS')))
+  Invoke-Outil gpgconf @('--homedir', $dossier, '--kill', 'all') | Out-Null
   # VALIDSIG ends with the fingerprint of the primary key that made the signature.
   if (-not ($etat.Sortie | Where-Object { $_ -match "^\[GNUPG:\] VALIDSIG .* $cleRelease$" })) {
     $gpg = ($import.Sortie + $etat.Sortie) -join "`n"
@@ -43,10 +48,13 @@ function Confirm-Signature([string]$travail, [string]$base, [string]$version) {
 
 function Test-AttestationCosign([string]$travail, [string]$archive, [string]$version) {
   $empreinte = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+  # Without a token the API allows 60 requests an hour per address, shared behind a NAT.
+  $entetes = @{}
+  if ($env:GITHUB_TOKEN) { $entetes['Authorization'] = "Bearer $env:GITHUB_TOKEN" }
   try {
-    $reponse = Invoke-RestMethod "https://api.github.com/repos/$depot/attestations/sha256:$empreinte"
+    $reponse = Invoke-RestMethod "https://api.github.com/repos/$depot/attestations/sha256:$empreinte" -Headers $entetes
   } catch {
-    return $false
+    throw "the attestations of $(Split-Path $archive -Leaf) could not be read from api.github.com: try again later, set GITHUB_TOKEN, or sign in with gh auth login. $($_.Exception.Message)"
   }
   $identite = "https://github.com/$depot/.github/workflows/binaires.yml@refs/tags/v$version"
   $bundle = Join-Path $travail 'bundle.json'

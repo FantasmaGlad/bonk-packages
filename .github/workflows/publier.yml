@@ -210,12 +210,24 @@ jobs:
           - { nom: windows-cosign, os: windows-2025, outil: cosign }
     env:
       GH_TOKEN: ${{ matrix.outil == 'gh' && github.token || '' }}
+      GITHUB_TOKEN: ${{ matrix.outil == 'cosign' && github.token || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - if: matrix.outil == 'cosign'
         uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+      # gh would take GITHUB_TOKEN and win over cosign: a gh that is never signed in hides it.
+      - name: gh masqué
+        if: matrix.outil == 'cosign'
+        shell: bash
+        run: |
+          masque="$RUNNER_TEMP/masque"
+          mkdir -p "$masque"
+          printf '#!/bin/sh\nexit 1\n' > "$masque/gh"
+          printf '@exit /b 1\r\n' > "$masque/gh.cmd"
+          chmod +x "$masque/gh"
+          echo "$masque" >> "$GITHUB_PATH"
       - name: gpg, macOS
         if: runner.os == 'macOS'
         run: command -v gpg || brew install gnupg
