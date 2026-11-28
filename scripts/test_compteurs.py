@@ -1,13 +1,11 @@
 import datetime
+import ipaddress
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
 import compteurs
-
-
-import ipaddress
 
 RUNNERS = [ipaddress.ip_network("4.148.0.0/16"), ipaddress.ip_network("2a01:111::/32")]
 
