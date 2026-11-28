@@ -17,6 +17,8 @@ from pathlib import Path
 HOTE = "packages.bonk-os.app"
 GRAPHQL = "https://api.cloudflare.com/client/v4/graphql"
 RELEASES = "https://api.github.com/repos/FantasmaGlad/Bonk/releases?per_page=100&page={}"
+LIMITE = 10000
+PROGRAMME = r"bonk(-cli)?[-_][^/]+\.(tar\.gz|zip|exe|dmg|deb|rpm|pkg\.tar\.zst|apk)"
 # Cloudflare keeps 31 days of request analytics.
 JOURS_GARDES = 30
 # A counted channel downloads through a 302 of /dl/<channel>/; a repository serves its packages itself.
@@ -24,6 +26,8 @@ CANAUX = {
     "homebrew": (302, re.compile(r"^/dl/homebrew/v[^/]+/bonk(-cli)?-[^/]+\.tar\.gz$")),
     "script": (302, re.compile(r"^/dl/script/v[^/]+/bonk-cli-[^/]+\.(tar\.gz|zip)$")),
     "scoop": (302, re.compile(r"^/dl/scoop/v[^/]+/bonk(-cli)?-[^/]+\.zip$")),
+    "site": (302, re.compile(rf"^/dl/site/v[^/]+/{PROGRAMME}$")),
+    "readme": (200, re.compile(rf"^/download/{PROGRAMME}/(index\.html)?$")),
     "apt": (200, re.compile(r"^/debian/pool/[^/]+\.deb$")),
     "rpm": (200, re.compile(r"^/rpm/[^/]+/[^/]+\.rpm$")),
     "pacman": (200, re.compile(r"^/arch/x86_64/[^/]+\.pkg\.tar\.zst$")),
@@ -39,8 +43,8 @@ TYPES = {
     "android": re.compile(r"^bonk-[^/]+\.apk$"),
 }
 REQUETE = """query($zone: String!, $jour: Date!) { viewer { zones(filter: {zoneTag: $zone}) {
-  httpRequestsAdaptiveGroups(limit: 10000, filter: {date: $jour, clientRequestHTTPHost: "%s"}) {
-    count dimensions { clientRequestPath edgeResponseStatus } } } } }""" % HOTE
+  httpRequestsAdaptiveGroups(limit: %d, filter: {date: $jour, clientRequestHTTPHost: "%s"}) {
+    count dimensions { clientRequestPath edgeResponseStatus } } } } }""" % (LIMITE, HOTE)
 
 
 def canal(chemin: str, statut: int) -> str | None:
@@ -68,11 +72,19 @@ def interroger(jour: str) -> list[dict]:
         donnees = json.load(reponse)
     if donnees.get("errors"):
         raise SystemExit(f"ERREUR Cloudflare {jour} : {donnees['errors']}")
-    return donnees["data"]["viewer"]["zones"][0]["httpRequestsAdaptiveGroups"]
+    groupes = donnees["data"]["viewer"]["zones"][0]["httpRequestsAdaptiveGroups"]
+    if len(groupes) >= LIMITE:
+        raise SystemExit(f"ERREUR Cloudflare {jour} : {LIMITE} groupes, relevé tronqué")
+    return groupes
 
 
 def type_github(nom: str) -> str | None:
     return next((genre for genre, motif in TYPES.items() if motif.match(nom)), None)
+
+
+# Program files carry their version in their name; SHA256SUMS and the manifests repeat in every release.
+def cle_github(tag: str, nom: str) -> str:
+    return nom if type_github(nom) else f"{tag}/{nom}"
 
 
 def lire_github() -> dict[str, int]:
@@ -86,8 +98,7 @@ def lire_github() -> dict[str, int]:
             releases = json.load(reponse)
         for release in releases:
             for fichier in release["assets"]:
-                if type_github(fichier["name"]):
-                    fichiers[fichier["name"]] = fichier["download_count"]
+                fichiers[cle_github(release["tag_name"], fichier["name"])] = fichier["download_count"]
         if len(releases) < 100:
             break
     return fichiers
@@ -130,6 +141,7 @@ def ecrire_totaux(dossier: Path, github: dict[str, int]) -> dict:
     resume = {
         "counted_until": jours[-1].stem if jours else None,
         "total": sum(par_type.values()) + depots,
+        "raw": sum(github.values()) + depots,
         "github": {"total": sum(par_type.values()), **par_type},
         "repositories": depots,
         "channels": canaux,

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import compteurs
 
-
 def groupe(chemin: str, statut: int, nombre: int) -> dict:
     return {"count": nombre, "dimensions": {"clientRequestPath": chemin, "edgeResponseStatus": statut}}
 
@@ -26,6 +25,11 @@ class Canaux(unittest.TestCase):
             ("/arch/x86_64/bonk-0.1.6-1-x86_64.pkg.tar.zst", 200, "pacman"),
             ("/arch/x86_64/bonk-0.1.6-1-x86_64.pkg.tar.zst.sig", 200, None),
             ("/termux/pool/bonk_0.1.6_aarch64.deb", 200, "termux"),
+            ("/dl/site/v0.1.6/bonk-0.1.6-windows-x86_64-setup.exe", 302, "site"),
+            ("/dl/site/v0.1.6/bonk_0.1.6-1_amd64.deb", 302, "site"),
+            ("/download/bonk-linux-x86_64.tar.gz/", 200, "readme"),
+            ("/download/bonk-cli-windows-x86_64.zip/index.html", 200, "readme"),
+            ("/download/SHA256SUMS/", 200, None),
             ("/dl/homebrew/v0.1.6/bonk-0.1.6-macos-aarch64.tar.gz", 404, None),
         ]
         for chemin, statut, attendu in cas:
@@ -67,6 +71,11 @@ class Github(unittest.TestCase):
             with self.subTest(nom=nom):
                 self.assertEqual(compteurs.type_github(nom), attendu)
 
+    def test_les_fichiers_communs_a_chaque_release_restent_distincts(self):
+        self.assertEqual(compteurs.cle_github("v0.1.6", "bonk_0.1.6-1_amd64.deb"), "bonk_0.1.6-1_amd64.deb")
+        self.assertEqual(compteurs.cle_github("v0.1.6", "SHA256SUMS"), "v0.1.6/SHA256SUMS")
+        self.assertNotEqual(compteurs.cle_github("v0.1.0", "SHA256SUMS"), compteurs.cle_github("v0.1.6", "SHA256SUMS"))
+
     def test_une_release_supprimee_garde_ses_telechargements(self):
         with tempfile.TemporaryDirectory() as racine:
             dossier = Path(racine)
@@ -83,11 +92,17 @@ class Registre(unittest.TestCase):
             for jour, apt, homebrew in (("2026-11-28", 900, 4), ("2026-11-29", 450, 1)):
                 comptes = dict.fromkeys(compteurs.CANAUX, 0) | {"apt": apt, "homebrew": homebrew}
                 (dossier / "jours" / f"{jour}.json").write_text(json.dumps(comptes))
-            github = {"bonk-0.1.6-windows-x86_64-setup.exe": 30, "bonk-cli-0.1.6-linux-x86_64.tar.gz": 20}
+            github = {
+                "bonk-0.1.6-windows-x86_64-setup.exe": 30,
+                "bonk-cli-0.1.6-linux-x86_64.tar.gz": 20,
+                "v0.1.6/SHA256SUMS": 70,
+                "v0.1.6/SHA256SUMS.asc": 40,
+            }
             resume = compteurs.ecrire_totaux(dossier, github)
             self.assertEqual(resume["counted_until"], "2026-11-29")
             self.assertEqual((resume["github"]["total"], resume["repositories"], resume["total"]), (50, 1350, 1400))
             self.assertEqual(resume["channels"]["homebrew"], 5)
+            self.assertEqual(resume["raw"], 50 + 110 + 1350)
             self.assertEqual(json.loads((dossier / "telechargements.json").read_text()), resume)
             messages = {nom: json.loads((dossier / f"{nom}.json").read_text())["message"] for nom in ("total", "homebrew", "paquets")}
             self.assertEqual(messages, {"total": "1.4k", "homebrew": "5", "paquets": "1.4k"})
