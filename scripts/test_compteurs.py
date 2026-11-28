@@ -42,19 +42,55 @@ class Canaux(unittest.TestCase):
         self.assertEqual(sum(comptes.values()), 5)
 
 
+class Github(unittest.TestCase):
+    def test_seuls_les_fichiers_du_programme_comptent(self):
+        cas = [
+            ("bonk-0.1.6-linux-x86_64.tar.gz", "archive"),
+            ("bonk-cli-0.1.6-windows-x86_64.zip", "archive"),
+            ("bonk-0.1.6-windows-x86_64-setup.exe", "installer"),
+            ("bonk-0.1.6-macos-universal.dmg", "installer"),
+            ("bonk_0.1.6-1_amd64.deb", "package"),
+            ("bonk-cli_0.1.6-1_i386.deb", "package"),
+            ("bonk-cli-0.1.6-1.x86_64.rpm", "package"),
+            ("bonk-0.1.6-1-x86_64.pkg.tar.zst", "package"),
+            ("bonk-0.1.6-android-arm64.apk", "android"),
+            ("SHA256SUMS", None),
+            ("SHA256SUMS.asc", None),
+            ("bonk-release-key.asc", None),
+            ("bonk.json", None),
+            ("bonk.rb", None),
+            ("bonk.cdx.json", None),
+            ("bonkos-bin.PKGBUILD", None),
+            ("FantasmaGlad.Bonk.installer.yaml", None),
+        ]
+        for nom, attendu in cas:
+            with self.subTest(nom=nom):
+                self.assertEqual(compteurs.type_github(nom), attendu)
+
+    def test_une_release_supprimee_garde_ses_telechargements(self):
+        with tempfile.TemporaryDirectory() as racine:
+            dossier = Path(racine)
+            compteurs.garder_github(dossier, {"bonk-0.1.5-linux-x86_64.tar.gz": 40, "bonk_0.1.6-1_amd64.deb": 3})
+            gardes = compteurs.garder_github(dossier, {"bonk_0.1.6-1_amd64.deb": 5})
+            self.assertEqual(gardes, {"bonk-0.1.5-linux-x86_64.tar.gz": 40, "bonk_0.1.6-1_amd64.deb": 5})
+
+
 class Registre(unittest.TestCase):
-    def test_totaux_et_badges_de_tous_les_jours(self):
+    def test_un_seul_total_pour_les_badges_et_l_api(self):
         with tempfile.TemporaryDirectory() as racine:
             dossier = Path(racine)
             (dossier / "jours").mkdir()
             for jour, apt, homebrew in (("2026-11-28", 900, 4), ("2026-11-29", 450, 1)):
                 comptes = dict.fromkeys(compteurs.CANAUX, 0) | {"apt": apt, "homebrew": homebrew}
                 (dossier / "jours" / f"{jour}.json").write_text(json.dumps(comptes))
-            totaux = compteurs.ecrire_totaux(dossier)
-            self.assertEqual((totaux["apt"], totaux["homebrew"]), (1350, 5))
-            paquets = json.loads((dossier / "paquets.json").read_text())
-            self.assertEqual((paquets["schemaVersion"], paquets["message"]), (1, "1.4k"))
-            self.assertEqual(json.loads((dossier / "homebrew.json").read_text())["message"], "5")
+            github = {"bonk-0.1.6-windows-x86_64-setup.exe": 30, "bonk-cli-0.1.6-linux-x86_64.tar.gz": 20}
+            resume = compteurs.ecrire_totaux(dossier, github)
+            self.assertEqual(resume["counted_until"], "2026-11-29")
+            self.assertEqual((resume["github"]["total"], resume["repositories"], resume["total"]), (50, 1350, 1400))
+            self.assertEqual(resume["channels"]["homebrew"], 5)
+            self.assertEqual(json.loads((dossier / "telechargements.json").read_text()), resume)
+            messages = {nom: json.loads((dossier / f"{nom}.json").read_text())["message"] for nom in ("total", "homebrew", "paquets")}
+            self.assertEqual(messages, {"total": "1.4k", "homebrew": "5", "paquets": "1.4k"})
 
     def test_seuls_les_jours_finis_et_non_comptes(self):
         with tempfile.TemporaryDirectory() as racine:
