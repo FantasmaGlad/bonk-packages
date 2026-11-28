@@ -7,6 +7,7 @@ on GitHub, then rewrites telechargements.json and the badges. Needs CLOUDFLARE_A
 CLOUDFLARE_ZONE_ID; GITHUB_TOKEN when set.
 """
 import datetime
+import ipaddress
 import json
 import os
 import re
@@ -17,6 +18,9 @@ from pathlib import Path
 HOTE = "packages.bonk-os.app"
 GRAPHQL = "https://api.cloudflare.com/client/v4/graphql"
 RELEASES = "https://api.github.com/repos/FantasmaGlad/Bonk/releases?per_page=100&page={}"
+META = "https://api.github.com/meta"
+LIMITE = 10000
+PROGRAMME = r"bonk(-cli)?[-_][^/]+\.(tar\.gz|zip|exe|dmg|deb|rpm|pkg\.tar\.zst|apk)"
 # Cloudflare keeps 31 days of request analytics.
 JOURS_GARDES = 30
 # A counted channel downloads through a 302 of /dl/<channel>/; a repository serves its packages itself.
@@ -24,6 +28,8 @@ CANAUX = {
     "homebrew": (302, re.compile(r"^/dl/homebrew/v[^/]+/bonk(-cli)?-[^/]+\.tar\.gz$")),
     "script": (302, re.compile(r"^/dl/script/v[^/]+/bonk-cli-[^/]+\.(tar\.gz|zip)$")),
     "scoop": (302, re.compile(r"^/dl/scoop/v[^/]+/bonk(-cli)?-[^/]+\.zip$")),
+    "site": (302, re.compile(rf"^/dl/site/v[^/]+/{PROGRAMME}$")),
+    "readme": (200, re.compile(rf"^/download/{PROGRAMME}/(index\.html)?$")),
     "apt": (200, re.compile(r"^/debian/pool/[^/]+\.deb$")),
     "rpm": (200, re.compile(r"^/rpm/[^/]+/[^/]+\.rpm$")),
     "pacman": (200, re.compile(r"^/arch/x86_64/[^/]+\.pkg\.tar\.zst$")),
@@ -39,8 +45,8 @@ TYPES = {
     "android": re.compile(r"^bonk-[^/]+\.apk$"),
 }
 REQUETE = """query($zone: String!, $jour: Date!) { viewer { zones(filter: {zoneTag: $zone}) {
-  httpRequestsAdaptiveGroups(limit: 10000, filter: {date: $jour, clientRequestHTTPHost: "%s"}) {
-    count dimensions { clientRequestPath edgeResponseStatus } } } } }""" % HOTE
+  httpRequestsAdaptiveGroups(limit: %d, filter: {date: $jour, clientRequestHTTPHost: "%s"}) {
+    count dimensions { clientRequestPath edgeResponseStatus clientIP } } } } }""" % (LIMITE, HOTE)
 
 
 def canal(chemin: str, statut: int) -> str | None:
@@ -50,13 +56,28 @@ def canal(chemin: str, statut: int) -> str | None:
     return None
 
 
-def compter(groupes: list[dict]) -> dict[str, int]:
-    comptes = dict.fromkeys(CANAUX, 0)
+# The address is only compared with GitHub's published runner ranges, never kept.
+def reseaux_actions() -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
+    requete = urllib.request.Request(META, headers={"User-Agent": "bonk-packages"})
+    with urllib.request.urlopen(requete, timeout=60) as reponse:
+        return [ipaddress.ip_network(plage) for plage in json.load(reponse)["actions"]]
+
+
+def automatise(adresse: str, reseaux: list) -> bool:
+    ip = ipaddress.ip_address(adresse)
+    return any(ip in reseau for reseau in reseaux)
+
+
+def compter(groupes: list[dict], reseaux: list) -> dict[str, dict[str, int]]:
+    comptes = {"all": dict.fromkeys(CANAUX, 0), "devices": dict.fromkeys(CANAUX, 0)}
     for groupe in groupes:
         dimensions = groupe["dimensions"]
         nom = canal(dimensions["clientRequestPath"], dimensions["edgeResponseStatus"])
-        if nom:
-            comptes[nom] += groupe["count"]
+        if not nom:
+            continue
+        comptes["all"][nom] += groupe["count"]
+        if not automatise(dimensions["clientIP"], reseaux):
+            comptes["devices"][nom] += groupe["count"]
     return comptes
 
 
@@ -68,7 +89,10 @@ def interroger(jour: str) -> list[dict]:
         donnees = json.load(reponse)
     if donnees.get("errors"):
         raise SystemExit(f"ERREUR Cloudflare {jour} : {donnees['errors']}")
-    return donnees["data"]["viewer"]["zones"][0]["httpRequestsAdaptiveGroups"]
+    groupes = donnees["data"]["viewer"]["zones"][0]["httpRequestsAdaptiveGroups"]
+    if len(groupes) >= LIMITE:
+        raise SystemExit(f"ERREUR Cloudflare {jour} : {LIMITE} groupes, relevé tronqué")
+    return groupes
 
 
 def type_github(nom: str) -> str | None:
@@ -115,12 +139,22 @@ def badge(dossier: Path, nom: str, libelle: str, nombre: int) -> None:
     (dossier / f"{nom}.json").write_text(json.dumps(endpoint) + "\n")
 
 
+# A day counted before devices were told apart holds one flat count, from before the proxy: nothing to split.
+def lire_jour(fichier: Path) -> dict[str, dict[str, int]]:
+    jour = json.loads(fichier.read_text())
+    return jour if "all" in jour else {"all": jour, "devices": jour}
+
+
 def ecrire_totaux(dossier: Path, github: dict[str, int]) -> dict:
     canaux = dict.fromkeys(CANAUX, 0)
+    appareils = dict.fromkeys(CANAUX, 0)
     jours = sorted((dossier / "jours").glob("*.json"))
     for fichier in jours:
-        for nom, nombre in json.loads(fichier.read_text()).items():
+        jour = lire_jour(fichier)
+        for nom, nombre in jour["all"].items():
             canaux[nom] = canaux.get(nom, 0) + nombre
+        for nom, nombre in jour["devices"].items():
+            appareils[nom] = appareils.get(nom, 0) + nombre
     par_type = dict.fromkeys(TYPES, 0)
     for nom, nombre in github.items():
         genre = type_github(nom)
@@ -133,6 +167,7 @@ def ecrire_totaux(dossier: Path, github: dict[str, int]) -> dict:
         "github": {"total": sum(par_type.values()), **par_type},
         "repositories": depots,
         "channels": canaux,
+        "devices": {"total": sum(appareils.values()), **appareils},
     }
     (dossier / "telechargements.json").write_text(json.dumps(resume, indent=1) + "\n")
     badge(dossier, "total", "Downloads", resume["total"])
@@ -153,8 +188,9 @@ def main() -> None:
     dossier = Path(sys.argv[1])
     (dossier / "jours").mkdir(parents=True, exist_ok=True)
     jours = sys.argv[2:] or jours_a_compter(dossier, datetime.datetime.now(datetime.timezone.utc).date())
+    reseaux = reseaux_actions()
     for jour in jours:
-        comptes = compter(interroger(jour))
+        comptes = compter(interroger(jour), reseaux)
         (dossier / "jours" / f"{jour}.json").write_text(json.dumps(comptes, indent=1) + "\n")
         print(jour, comptes)
     (dossier / "totaux.json").unlink(missing_ok=True)
