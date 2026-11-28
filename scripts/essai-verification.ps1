@@ -66,3 +66,5 @@ try {
 } finally {
   Remove-Item $travail -Recurse -Force
 }
+# The last case leaves the refused install's exit code in LASTEXITCODE, which the runner would report.
+exit 0
