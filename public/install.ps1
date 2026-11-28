@@ -1,6 +1,95 @@
 # Usage: irm https://packages.bonk-os.app/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
 
+$depot = 'FantasmaGlad/Bonk'
+$cleRelease = '9F67B75803CE75260FB0D8952F20472E7865EDF1'
+$emetteur = 'https://token.actions.githubusercontent.com'
+
+function Test-Outil([string]$nom) { [bool](Get-Command $nom -ErrorAction SilentlyContinue) }
+
+# A gpg built for MSYS (Git for Windows) reads paths as /c/x and says so on its Home line; Gpg4win reads C:/x.
+function ConvertTo-CheminGpg([string]$chemin, [bool]$msys) {
+  $chemin = $chemin.Replace('\', '/')
+  if ($msys -and $chemin -match '^([A-Za-z]):/(.*)$') { "/$($Matches[1].ToLower())/$($Matches[2])" } else { $chemin }
+}
+
+# Windows PowerShell turns the standard error of a native command into a terminating error under Stop.
+function Invoke-Outil([string]$nom, [string[]]$arguments) {
+  $ErrorActionPreference = 'Continue'
+  $sortie = & $nom @arguments 2>&1 | ForEach-Object { "$_" }
+  [pscustomobject]@{ Code = $LASTEXITCODE; Sortie = @($sortie) }
+}
+
+function Confirm-Signature([string]$travail, [string]$base, [string]$version) {
+  if (-not (Test-Outil gpg)) {
+    Write-Warning "gpg is missing: the signature of SHA256SUMS by the Bonk release key $cleRelease was not checked."
+    return
+  }
+  $signature = Join-Path $travail 'SHA256SUMS.asc'
+  $cle = Join-Path $travail 'cle.asc'
+  try {
+    Invoke-WebRequest "$base/SHA256SUMS.asc" -OutFile $signature -UseBasicParsing
+    Invoke-WebRequest "$base/bonk-release-key.asc" -OutFile $cle -UseBasicParsing
+  } catch {
+    Write-Warning "Bonk $version has no signature of SHA256SUMS: the signature was not checked."
+    return
+  }
+  $gnupg = Join-Path $travail 'gnupg'
+  New-Item -ItemType Directory -Path $gnupg | Out-Null
+  $msys = [bool]((Invoke-Outil gpg @('--version')).Sortie | Where-Object { $_ -match '^Home: /' })
+  $dossier = ConvertTo-CheminGpg $gnupg $msys
+  $import = Invoke-Outil gpg @('--homedir', $dossier, '--batch', '--import', (ConvertTo-CheminGpg $cle $msys))
+  $etat = Invoke-Outil gpg @('--homedir', $dossier, '--batch', '--status-fd', '1', '--verify',
+    (ConvertTo-CheminGpg $signature $msys), (ConvertTo-CheminGpg (Join-Path $travail 'SHA256SUMS') $msys))
+  Invoke-Outil gpgconf @('--homedir', $dossier, '--kill', 'all') | Out-Null
+  # VALIDSIG ends with the fingerprint of the primary key that made the signature.
+  if (-not ($etat.Sortie | Where-Object { $_ -match "^\[GNUPG:\] VALIDSIG .* $cleRelease$" })) {
+    $gpg = ($import.Sortie + $etat.Sortie) -join "`n"
+    throw "SHA256SUMS of Bonk $version is not signed by the Bonk release key $cleRelease. gpg:`n$gpg"
+  }
+  Write-Output "SHA256SUMS signed by the Bonk release key $cleRelease."
+}
+
+function Test-AttestationCosign([string]$travail, [string]$archive, [string]$version) {
+  $empreinte = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+  # Without a token the API allows 60 requests an hour per address, shared behind a NAT.
+  $entetes = @{}
+  if ($env:GITHUB_TOKEN) { $entetes['Authorization'] = "Bearer $env:GITHUB_TOKEN" }
+  try {
+    $reponse = Invoke-RestMethod "https://api.github.com/repos/$depot/attestations/sha256:$empreinte" -Headers $entetes
+  } catch {
+    # 404: GitHub holds no attestation for this content.
+    if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) { return $false }
+    throw "the attestations of $(Split-Path $archive -Leaf) could not be read from api.github.com: try again later, set GITHUB_TOKEN, or sign in with gh auth login. $($_.Exception.Message)"
+  }
+  $identite = "https://github.com/$depot/.github/workflows/binaires.yml@refs/tags/v$version"
+  $bundle = Join-Path $travail 'bundle.json'
+  foreach ($attestation in $reponse.attestations) {
+    [IO.File]::WriteAllText($bundle, ($attestation.bundle | ConvertTo-Json -Depth 100 -Compress))
+    $resultat = Invoke-Outil cosign @('verify-blob-attestation', '--bundle', $bundle, '--new-bundle-format',
+      '--certificate-identity', $identite, '--certificate-oidc-issuer', $emetteur,
+      '--type', 'https://slsa.dev/provenance/v1', $archive)
+    if ($resultat.Code -eq 0) { return $true }
+  }
+  $false
+}
+
+function Confirm-Provenance([string]$travail, [string]$archive, [string]$version) {
+  $nom = Split-Path $archive -Leaf
+  $refus = "$nom has no provenance attestation from the release workflow of Bonk $version."
+  if ((Test-Outil gh) -and (Invoke-Outil gh @('auth', 'status')).Code -eq 0) {
+    $resultat = Invoke-Outil gh @('attestation', 'verify', $archive, '--repo', $depot,
+      '--signer-workflow', "$depot/.github/workflows/binaires.yml", '--source-ref', "refs/tags/v$version")
+    if ($resultat.Code -ne 0) { throw $refus }
+  } elseif (Test-Outil cosign) {
+    if (-not (Test-AttestationCosign $travail $archive $version)) { throw $refus }
+  } else {
+    Write-Warning "neither gh signed in (gh auth login) nor cosign is installed: the provenance of $nom was not checked, only its SHA-256. By hand: gh attestation verify $nom --repo $depot"
+    return
+  }
+  Write-Output "$nom built by the release workflow of $depot at v$version."
+}
+
 $cible = switch ($env:PROCESSOR_ARCHITECTURE) {
   'AMD64' { 'windows-x86_64' }
   'ARM64' { 'windows-aarch64' }
@@ -9,19 +98,21 @@ $cible = switch ($env:PROCESSOR_ARCHITECTURE) {
 }
 $version = (Invoke-RestMethod https://packages.bonk-os.app/version.txt).Trim()
 $dossier = "bonk-cli-$version-$cible"
-$base = "https://github.com/FantasmaGlad/Bonk/releases/download/v$version"
+$base = if ($env:BONK_RELEASE_URL) { $env:BONK_RELEASE_URL } else { "https://github.com/$depot/releases/download/v$version" }
 $travail = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
 New-Item -ItemType Directory -Path $travail | Out-Null
 try {
-  $archive = Join-Path $travail "$dossier.zip"
-  Invoke-WebRequest "$base/$dossier.zip" -OutFile $archive -UseBasicParsing
   # GitHub serves this file as binary: its direct answer would be bytes, never text.
   $empreintes = Join-Path $travail 'SHA256SUMS'
   Invoke-WebRequest "$base/SHA256SUMS" -OutFile $empreintes -UseBasicParsing
+  Confirm-Signature $travail $base $version
   $ligne = Get-Content $empreintes | Where-Object { $_ -match "\s\*?$([regex]::Escape("$dossier.zip"))\s*$" }
-  if (-not $ligne) { throw "No checksum for $dossier.zip" }
+  if (-not $ligne) { throw "Bonk $version has no build for $cible." }
   $attendue = ($ligne -split '\s+')[0]
-  if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $attendue.ToUpper()) { throw "Checksum mismatch: $dossier.zip" }
+  $archive = Join-Path $travail "$dossier.zip"
+  Invoke-WebRequest "$base/$dossier.zip" -OutFile $archive -UseBasicParsing
+  if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $attendue.ToUpper()) { throw "$dossier.zip does not match its SHA-256 in SHA256SUMS." }
+  Confirm-Provenance $travail $archive $version
   Expand-Archive $archive -DestinationPath $travail
   $destination = Join-Path $env:LOCALAPPDATA 'Programs\Bonk'
   New-Item -ItemType Directory -Force -Path $destination | Out-Null

@@ -130,6 +130,8 @@ curl -fsSL https://packages.bonk-os.app/install.sh | sh
 irm https://packages.bonk-os.app/install.ps1 | iex
 ```
 
+The script checks the archive against `SHA256SUMS`. With `gpg`, it checks that `SHA256SUMS` is signed by the Bonk release key `9F67 B758 03CE 7526 0FB0  D895 2F20 472E 7865 EDF1`. With `gh` signed in, or `cosign` (and `jq` on Linux and macOS), it checks that the release workflow of Bonk built the archive. A missing tool is reported, never skipped silently.
+
 On a Chromebook, run the script in the Linux development environment, then enable the USB drive for Linux in the ChromeOS settings.
 
 ## Latest files

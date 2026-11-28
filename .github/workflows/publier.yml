@@ -191,6 +191,62 @@ jobs:
           (Get-Command bonk).Source
           bonk --version
 
+  # Each provenance tool on each system, with a substituted archive and a modified SHA256SUMS.
+  verification:
+    name: verification (${{ matrix.nom }})
+    needs: construire
+    if: needs.construire.outputs.a_faire == 'true'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { nom: linux-gh, os: ubuntu-24.04, outil: gh }
+          - { nom: linux-cosign, os: ubuntu-24.04, outil: cosign }
+          - { nom: macos-gh, os: macos-latest, outil: gh }
+          - { nom: macos-cosign, os: macos-latest, outil: cosign }
+          - { nom: windows-gh, os: windows-2025, outil: gh }
+          - { nom: windows-cosign, os: windows-2025, outil: cosign }
+    env:
+      GH_TOKEN: ${{ matrix.outil == 'gh' && github.token || '' }}
+      GITHUB_TOKEN: ${{ matrix.outil == 'cosign' && github.token || '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: matrix.outil == 'cosign'
+        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+      # gh would take GITHUB_TOKEN and win over cosign: a gh that is never signed in hides it.
+      - name: gh masqué
+        if: matrix.outil == 'cosign'
+        shell: bash
+        run: |
+          masque="$RUNNER_TEMP/masque"
+          mkdir -p "$masque"
+          printf '#!/bin/sh\nexit 1\n' > "$masque/gh"
+          printf '@exit /b 1\r\n' > "$masque/gh.cmd"
+          chmod +x "$masque/gh"
+          echo "$masque" >> "$GITHUB_PATH"
+      - name: gpg, macOS
+        if: runner.os == 'macOS'
+        run: command -v gpg || brew install gnupg
+      # The GnuPG installer of Chocolatey waits forever on the runner; Git for Windows ships gpg.
+      - name: gpg, Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $outils = "$env:ProgramFiles\Git\usr\bin"
+          & "$outils\gpg.exe" --version
+          Add-Content $env:GITHUB_PATH $outils
+      - name: install.sh
+        if: runner.os != 'Windows'
+        run: sh scripts/essai-verification.sh public/install.sh
+      - name: install.ps1
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: scripts/essai-verification.ps1 public/install.ps1
+
   installer-windows:
     name: installer (windows)
     needs: publication
