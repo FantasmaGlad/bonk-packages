@@ -219,12 +219,14 @@ jobs:
       - name: gpg, macOS
         if: runner.os == 'macOS'
         run: command -v gpg || brew install gnupg
+      # The GnuPG installer of Chocolatey waits forever on the runner; Git for Windows ships gpg.
       - name: gpg, Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          choco install gnupg --no-progress -y
-          Add-Content $env:GITHUB_PATH "${env:ProgramFiles(x86)}\GnuPG\bin"
+          $outils = "$env:ProgramFiles\Git\usr\bin"
+          & "$outils\gpg.exe" --version
+          Add-Content $env:GITHUB_PATH $outils
       - name: install.sh
         if: runner.os != 'Windows'
         run: sh scripts/essai-verification.sh public/install.sh
