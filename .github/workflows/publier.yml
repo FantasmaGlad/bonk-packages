@@ -152,11 +152,12 @@ jobs:
           IMAGE: ${{ matrix.image }}
         run: docker run --rm --volume "$PWD/scripts:/s:ro" "$IMAGE" sh /s/essai-installation.sh
 
-  # The scripts of this tree, as a user runs them: a new terminal must find bonk.
+  # The scripts of this tree, as a user runs them: a new terminal must find bonk. On a publishing run they wait
+  # for the publication, since they read version.txt online.
   scripts:
     name: script (${{ matrix.nom }})
-    needs: construire
-    if: needs.construire.outputs.a_faire == 'true'
+    needs: [construire, publication]
+    if: ${{ !cancelled() && needs.construire.result == 'success' && needs.construire.outputs.a_faire == 'true' && needs.publication.result != 'failure' }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -194,8 +195,8 @@ jobs:
   # Each provenance tool on each system, with a substituted archive and a modified SHA256SUMS.
   verification:
     name: verification (${{ matrix.nom }})
-    needs: construire
-    if: needs.construire.outputs.a_faire == 'true'
+    needs: [construire, publication]
+    if: ${{ !cancelled() && needs.construire.result == 'success' && needs.construire.outputs.a_faire == 'true' && needs.publication.result != 'failure' }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
