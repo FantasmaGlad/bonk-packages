@@ -23,10 +23,12 @@ verifier_signature() {
     return
   fi
   mkdir -m 700 "$travail/gnupg"
-  gpg --homedir "$travail/gnupg" --batch --quiet --import "$travail/cle.asc" 2> /dev/null
+  gpg --homedir "$travail/gnupg" --batch --import "$travail/cle.asc" > "$travail/gpg.txt" 2>&1 || true
+  gpg --homedir "$travail/gnupg" --batch --status-fd 1 --verify "$travail/SHA256SUMS.asc" "$travail/SHA256SUMS" \
+    >> "$travail/gpg.txt" 2>&1 || true
   # VALIDSIG ends with the fingerprint of the primary key that made the signature.
-  if ! gpg --homedir "$travail/gnupg" --batch --status-fd 1 --verify "$travail/SHA256SUMS.asc" "$travail/SHA256SUMS" \
-    2> /dev/null | grep -q "^\[GNUPG:\] VALIDSIG .* $CLE_RELEASE\$"; then
+  if ! grep -q "^\[GNUPG:\] VALIDSIG .* $CLE_RELEASE\$" "$travail/gpg.txt"; then
+    cat "$travail/gpg.txt" >&2
     echec "SHA256SUMS of Bonk $version is not signed by the Bonk release key $CLE_RELEASE."
   fi
   echo "SHA256SUMS signed by the Bonk release key $CLE_RELEASE."

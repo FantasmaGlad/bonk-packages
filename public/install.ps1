@@ -10,7 +10,7 @@ function Test-Outil([string]$nom) { [bool](Get-Command $nom -ErrorAction Silentl
 # Windows PowerShell turns the standard error of a native command into a terminating error under Stop.
 function Invoke-Outil([string]$nom, [string[]]$arguments) {
   $ErrorActionPreference = 'Continue'
-  $sortie = & $nom @arguments 2> $null
+  $sortie = & $nom @arguments 2>&1 | ForEach-Object { "$_" }
   [pscustomobject]@{ Code = $LASTEXITCODE; Sortie = @($sortie) }
 }
 
@@ -30,12 +30,13 @@ function Confirm-Signature([string]$travail, [string]$base, [string]$version) {
   }
   $gnupg = Join-Path $travail 'gnupg'
   New-Item -ItemType Directory -Path $gnupg | Out-Null
-  Invoke-Outil gpg @('--homedir', $gnupg, '--batch', '--quiet', '--import', $cle) | Out-Null
+  $import = Invoke-Outil gpg @('--homedir', $gnupg, '--batch', '--import', $cle)
   $etat = Invoke-Outil gpg @('--homedir', $gnupg, '--batch', '--status-fd', '1', '--verify', $signature, (Join-Path $travail 'SHA256SUMS'))
   Invoke-Outil gpgconf @('--homedir', $gnupg, '--kill', 'all') | Out-Null
   # VALIDSIG ends with the fingerprint of the primary key that made the signature.
   if (-not ($etat.Sortie | Where-Object { $_ -match "^\[GNUPG:\] VALIDSIG .* $cleRelease$" })) {
-    throw "SHA256SUMS of Bonk $version is not signed by the Bonk release key $cleRelease."
+    $gpg = ($import.Sortie + $etat.Sortie) -join "`n"
+    throw "SHA256SUMS of Bonk $version is not signed by the Bonk release key $cleRelease. gpg:`n$gpg"
   }
   Write-Output "SHA256SUMS signed by the Bonk release key $cleRelease."
 }
