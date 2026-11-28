@@ -88,7 +88,9 @@ if [ -n "${TERMUX_VERSION:-}" ] || [ "$(uname -o 2>/dev/null)" = Android ]; then
   echo "deb https://packages.bonk-os.app/termux stable main" > "$PREFIX/etc/apt/sources.list.d/bonk.list"
   pkg install -y bonk
   bonk --version
-  echo "Drives are reached through termux-usb (Termux:API): termux-usb -r -E -e 'bonk list' <device from termux-usb -l>"
+  echo "Drives are reached through termux-usb (Termux:API). List them, then run Bonk with the path given:"
+  echo "  termux-usb -l"
+  echo "  termux-usb -r -E -e 'bonk list' /dev/bus/usb/001/002"
   exit 0
 fi
 systeme=$(uname -s)

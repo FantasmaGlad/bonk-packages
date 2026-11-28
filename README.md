@@ -100,10 +100,14 @@ echo "deb $url/termux stable main" > "$apt/sources.list.d/bonk.list"
 pkg install bonk
 ```
 
-Drives are reached through `termux-usb`:
+Drives are reached through `termux-usb`: list them, then run Bonk with the path given.
 
 ```bash
-termux-usb -r -E -e 'bonk list' <device from termux-usb -l>
+termux-usb -l
+```
+
+```bash
+termux-usb -r -E -e 'bonk list' /dev/bus/usb/001/002
 ```
 
 ## Command line only
